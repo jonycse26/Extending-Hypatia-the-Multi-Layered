@@ -46,7 +46,8 @@ def worker(args):
         max_gsl_length_m,
         max_isl_length_m,
         dynamic_state_algorithm,
-        print_logs
+        print_logs,
+        description_file_path
      ) = args
 
     # Generate dynamic state
@@ -67,7 +68,9 @@ def worker(args):
                                   # "algorithm_free_one_only_over_isls"
                                   # "algorithm_free_gs_one_sat_many_only_over_isls"
                                   # "algorithm_paired_many_only_over_isls"
-        print_logs
+                                  # "algorithm_free_one_multi_layer"
+        print_logs,
+        description_file_path
     )
 
 
@@ -86,7 +89,9 @@ def help_dynamic_state(
     simulation_end_time_ns = duration_s * 1000 * 1000 * 1000
     time_step_ns = time_step_ms * 1000 * 1000
 
-    num_calculations = math.floor(simulation_end_time_ns / time_step_ns)
+    # FIX: Include time 0, so we need +1 to the calculation count
+    # For duration=5s and time_step=1s, we need: 0, 1, 2, 3, 4, 5 (6 steps, not 5)
+    num_calculations = int(math.floor(simulation_end_time_ns / time_step_ns)) + 1
     calculations_per_thread = int(math.floor(float(num_calculations) / float(num_threads)))
     num_threads_with_one_more = num_calculations % num_threads
 
@@ -119,10 +124,31 @@ def help_dynamic_state(
             ((current + num_time_steps) * time_step_ns) / 1e6
         ))
 
+        # Description file path (for multi-layer constellations)
+        description_file_path = output_generated_data_dir + "/" + name + "/description.txt"
+        if not os.path.exists(description_file_path):
+            description_file_path = None
+
+        # FIX: Calculate end_time correctly for each thread
+        # The range in generate_dynamic_state.py is: range(offset_ns, simulation_end_time_ns + time_step_ns, time_step_ns)
+        # So if we want Thread 0 to generate [0s, 1s] (2 steps), we need:
+        #   range(0, end_time + time_step_ns, time_step_ns) = [0, 1s]
+        #   This means: end_time + time_step_ns = 2s, so end_time = 1s
+        # But we're calculating: end_time = (current + num_time_steps) * time_step_ns = 2s
+        # So we need to subtract time_step_ns to account for the +time_step_ns in the range
+        if i == num_threads - 1:  # Last thread
+            # For the last thread, ensure we include the final time step (duration_s)
+            # The range adds time_step_ns, so we pass duration_s (not duration_s - time_step_ns)
+            # Then range(offset, duration_s + time_step_ns, time_step_ns) will include duration_s
+            end_time = simulation_end_time_ns
+        else:
+            # For non-last threads, subtract time_step_ns to account for the +time_step_ns in the range
+            end_time = (current + num_time_steps) * time_step_ns - time_step_ns
+        
         list_args.append((
             output_dynamic_state_dir,
             epoch,
-            (current + num_time_steps) * time_step_ns + (time_step_ns if (i + 1) != num_threads else 0),
+            end_time,
             time_step_ns,
             current * time_step_ns,
             satellites,
@@ -132,7 +158,8 @@ def help_dynamic_state(
             max_gsl_length_m,
             max_isl_length_m,
             dynamic_state_algorithm,
-            print_logs
+            print_logs,
+            description_file_path
         ))
 
         current += num_time_steps

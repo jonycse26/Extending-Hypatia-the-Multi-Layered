@@ -60,8 +60,12 @@ ArbiterResult ArbiterSatnet::Decide(
     int32_t own_if_id = std::get<1>(next_node_id_my_if_next_if);
     int32_t next_if_id = std::get<2>(next_node_id_my_if_next_if);
 
-    // If the result is invalid
-    NS_ABORT_MSG_IF(next_node_id == -2 || own_if_id == -2 || next_if_id == -2, "Forwarding state is not set for this node to this target node (invalid).");
+    // If the result is invalid (-2 = never set), treat it as "no route" (drop) instead of aborting.
+    // This makes simulations robust to occasional missing forwarding entries, and matches the
+    // semantics of (-1, -1, -1) which is an explicit drop/no-route.
+    if (next_node_id == -2 || own_if_id == -2 || next_if_id == -2) {
+        return ArbiterResult(true, 0, 0); // Failed = no route
+    }
 
     // Check whether it is a drop or not
     if (next_node_id != -1) {

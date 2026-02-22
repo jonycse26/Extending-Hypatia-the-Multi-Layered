@@ -46,7 +46,7 @@ PHASE_DIFF = True
 # [1]: https://www.itu.int/ITU-R/space/asreceived/Publication/DisplayPublication/8716
 ################################################################
 
-MEAN_MOTION_REV_PER_DAY = 14.80  # Altitude ~630 km
+MEAN_MOTION_REV_PER_DAY = 14.80  # Altitude ~630 km 14.80
 ALTITUDE_M = 630000  # Altitude ~630 km
 
 # Considering an elevation angle of 30 degrees; possible values [1]: 20(min)/30/35/45
@@ -794,5 +794,5 @@ class TestEndToEnd(unittest.TestCase):
                         self.assertEqual(columns[0][i], 136250000000)
 
             # Clean up
-            local_shell.remove_force_recursive("temp_gen_data")
-            local_shell.remove_force_recursive("temp_analysis_data")
+            # local_shell.remove_force_recursive("temp_gen_data")
+            # local_shell.remove_force_recursive("temp_analysis_data")

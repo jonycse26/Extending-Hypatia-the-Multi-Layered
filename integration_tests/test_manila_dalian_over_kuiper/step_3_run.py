@@ -32,7 +32,13 @@ local_shell = exputil.LocalShell()
 max_num_processes = 4
 
 # Check that no screen is running
-if local_shell.count_screens() != 0:
+#if local_shell.count_screens() != 0:
+try:
+    has_screens = local_shell.count_screens() != 0
+except Exception:
+    has_screens = False  # if 'screen' command not found, skip it
+
+if has_screens:
     print("There is a screen already running. "
           "Please kill all screens before running this analysis script (killall screen).")
     exit(1)
@@ -55,7 +61,14 @@ for run in get_tcp_run_list():
 print("Running commands (at most %d in parallel)..." % max_num_processes)
 for i in range(len(commands_to_run)):
     print("Starting command %d out of %d: %s" % (i + 1, len(commands_to_run), commands_to_run[i]))
+    #local_shell.detached_exec(commands_to_run[i])
+    # Fallback: run directly if 'screen' not installed
+try:
     local_shell.detached_exec(commands_to_run[i])
+except Exception as e:
+    print("Warning: screen not found, running command directly.")
+    local_shell.perfect_exec(commands_to_run[i])
+
     while local_shell.count_screens() >= max_num_processes:
         time.sleep(2)
 

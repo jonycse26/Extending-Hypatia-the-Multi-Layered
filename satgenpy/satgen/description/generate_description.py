@@ -24,8 +24,11 @@
 def generate_description(
         filename_description,
         max_gsl_length_m,
-        max_isl_length_m
+        max_isl_length_m,
+        leo_num_sats=None  # Optional: number of LEO satellites for multi-layer constellations
 ):
     with open(filename_description, "w+") as f_out:
         f_out.write("max_gsl_length_m=%.10f\n" % max_gsl_length_m)
         f_out.write("max_isl_length_m=%.10f\n" % max_isl_length_m)
+        if leo_num_sats is not None:
+            f_out.write("leo_num_sats=%d\n" % leo_num_sats)
