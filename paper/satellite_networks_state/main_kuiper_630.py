@@ -50,7 +50,7 @@ ALTITUDE_M = 630000  # Altitude ~630 km
 # Lower elevation angle = larger coverage area = more satellites in range
 # This matches the multi-layer configuration for fair comparison
 # 5° gives ~7,228 km GSL range (vs 3,628 km at 10°) - significantly improves path availability
-SATELLITE_CONE_RADIUS_M = ALTITUDE_M / math.tan(math.radians(5.0))
+SATELLITE_CONE_RADIUS_M = ALTITUDE_M / math.tan(math.radians(20.0))
 
 MAX_GSL_LENGTH_M = math.sqrt(math.pow(SATELLITE_CONE_RADIUS_M, 2) + math.pow(ALTITUDE_M, 2))
 

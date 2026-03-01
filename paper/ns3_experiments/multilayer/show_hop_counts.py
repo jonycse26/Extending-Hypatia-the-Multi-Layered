@@ -2,6 +2,7 @@
 """
 Show hop counts for ground station pairs from run_list.py.
 Hop count = number of satellites in the path (excluding GS).
+GS is only connected to LEO; path is always ... → MEO → LEO → GS (never MEO → GS directly).
 E.g. GS→LEO→GS = 1 hop; GS→LEO→MEO→LEO→GS = 3 hops (LEO, MEO, LEO).
 """
 
@@ -36,7 +37,7 @@ def get_hop_count_for_pair(from_id, to_id, fstate_file, leo_num_sats, total_sats
                     continue
 
     if (from_id, to_id) not in fstate_dict or fstate_dict[(from_id, to_id)] == -1:
-        return None, None, None
+        return None, None, None, False
 
     path_nodes = [from_id]
     current = fstate_dict[(from_id, to_id)]
@@ -67,7 +68,16 @@ def get_hop_count_for_pair(from_id, to_id, fstate_file, leo_num_sats, total_sats
     meo_nodes = [n for n in path_nodes if isinstance(n, int) and leo_num_sats <= n < total_sats]
     uses_meo = len(meo_nodes) > 0
 
-    return hop_count, uses_meo, path_nodes
+    # Sanity: GS is only connected to LEO; path must be ...→MEO→LEO→GS (never MEO→GS)
+    gs_id = total_sats  # first GS node id
+    invalid_meo_to_gs = False
+    for i in range(len(path_nodes) - 1):
+        a, b = path_nodes[i], path_nodes[i + 1]
+        if isinstance(a, int) and isinstance(b, int) and leo_num_sats <= a < total_sats and b >= gs_id:
+            invalid_meo_to_gs = True
+            break
+
+    return hop_count, uses_meo, path_nodes, invalid_meo_to_gs
 
 def show_hop_counts():
     """Show hop counts for all pairs from run_list.py."""
@@ -118,7 +128,7 @@ def show_hop_counts():
         print("-" * 80)
 
         for fstate_file in fstate_files:
-            hop_count, uses_meo, path_nodes = get_hop_count_for_pair(
+            hop_count, uses_meo, path_nodes, invalid_meo_to_gs = get_hop_count_for_pair(
                 from_id, to_id, fstate_file, leo_num_sats, total_sats
             )
             time_str = os.path.basename(fstate_file).replace('fstate_', '').replace('.txt', '')
@@ -128,13 +138,15 @@ def show_hop_counts():
                 meo_str = "Yes" if uses_meo else "No"
                 path_str = " → ".join(map(str, path_nodes))
                 print(f"{time_s:>6.1f}s  {hop_count:<6} {meo_str:<8} {path_str}")
+                if invalid_meo_to_gs:
+                    print("         ^ WARNING: path has MEO→GS (invalid). Regenerate dynamic state with current algorithm.")
             else:
                 print(f"{time_s:>6.1f}s  {'N/A':<6} {'N/A':<8} No path")
 
         print()
 
     print("=" * 80)
-    print("Note: Hop count = number of satellites in the path (excluding ground stations)")
+    print("Note: Hop count = number of satellites (excluding GS). GS only connects to LEO; path is ...→MEO→LEO→GS.")
     print("=" * 80)
 
     return 0

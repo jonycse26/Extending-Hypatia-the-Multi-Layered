@@ -1,15 +1,15 @@
-Configure run and logs directory,386145
-Configure simulator,7828882
-Setup TCP parameters,336111
-Create initial single forwarding state,20769470227
-Setup routing arbiter on each node,45453165373
-Create initial single forwarding state,3033653805
-Set first GSL interface bandwidth,332647987
-Determined pingmesh pairs,11927521
-Remove previous pingmesh log files,528212
-Setup pingmesh servers,82488537
-Setup pingmesh clients,11752662
-Whatever is between previous timestamp and the simulation run,172013
-Run simulation,11786423737
-Write pingmesh log files,9341995
-Destroy simulator,278013324
+Configure run and logs directory,413131
+Configure simulator,3513248
+Setup TCP parameters,400818
+Create initial single forwarding state,14695420059
+Setup routing arbiter on each node,24852849882
+Create initial single forwarding state,1037099928
+Set first GSL interface bandwidth,8402596
+Determined pingmesh pairs,1634482
+Remove previous pingmesh log files,34564
+Setup pingmesh servers,9059916
+Setup pingmesh clients,594992
+Whatever is between previous timestamp and the simulation run,60122
+Run simulation,5578167956
+Write pingmesh log files,3638777
+Destroy simulator,172693714

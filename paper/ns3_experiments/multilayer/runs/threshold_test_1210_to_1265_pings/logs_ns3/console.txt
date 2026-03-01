@@ -1,10 +1,10 @@
 Waf: Entering directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Waf: Leaving directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Build commands will be stored in build/debug_all/compile_commands.json
-'build' finished successfully (3.248s)
+'build' finished successfully (4.074s)
 BASIC SIMULATION START
-  > Date... Thursday February 19, 2026
-  > Time... 00:39:57
+  > Date... Wednesday February 25, 2026
+  > Time... 21:30:39
 
 CONFIGURE RUN DIRECTORY
   > Run directory: ../../paper/ns3_experiments/multilayer/runs/threshold_test_1210_to_1265_pings
@@ -55,7 +55,7 @@ SATELLITE NETWORK
   > Reading and creating ISLs
     >> ISL data rate........ 10000 Mbit/s
     >> ISL max queue size... 100000 packets
-    >> Created 3540 ISL(s)
+    >> Created 2564 ISL(s)
   > Creating GSLs
     >> GSL data rate........ 10000 Mbit/s
     >> GSL max queue size... 100000 packets
@@ -66,16 +66,16 @@ SATELLITE NETWORK
     >> Assigning IP addresses...
        (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)
        Progress (as there are more entries, it becomes slower):
-       - 10.06% (t = 0.32 s, update took 0.32 s)
-       - 20.12% (t = 0.69 s, update took 0.37 s)
-       - 30.19% (t = 1.10 s, update took 0.41 s)
-       - 40.25% (t = 1.46 s, update took 0.36 s)
-       - 50.31% (t = 1.84 s, update took 0.38 s)
-       - 60.37% (t = 2.20 s, update took 0.36 s)
-       - 70.43% (t = 2.53 s, update took 0.34 s)
-       - 80.50% (t = 2.97 s, update took 0.44 s)
-       - 90.56% (t = 3.55 s, update took 0.58 s)
-       - 100.00% (t = 4.05 s, update took 0.50 s)
+       - 10.06% (t = 0.23 s, update took 0.23 s)
+       - 20.12% (t = 0.41 s, update took 0.18 s)
+       - 30.19% (t = 0.60 s, update took 0.19 s)
+       - 40.25% (t = 0.83 s, update took 0.23 s)
+       - 50.31% (t = 1.02 s, update took 0.19 s)
+       - 60.37% (t = 1.25 s, update took 0.23 s)
+       - 70.43% (t = 1.42 s, update took 0.17 s)
+       - 80.50% (t = 1.51 s, update took 0.09 s)
+       - 90.56% (t = 1.78 s, update took 0.26 s)
+       - 100.00% (t = 2.00 s, update took 0.22 s)
     >> Finished assigning IPs
     >> Removing traffic control layers (qdiscs)...
     >> Finished removing GSL queueing disciplines
@@ -108,10 +108,8 @@ PINGMESH SCHEDULER
 
 SIMULATION
 Running the simulation for 5.00 simulation seconds...
-96.77% - Simulation Time = 4.84 s ::: Wallclock Time = 11.20 s
-Estimated wallclock time remaining: 0 seconds
 Finished simulation.
-Simulation of 5.0 seconds took in wallclock time 11.4 seconds.
+Simulation of 5.0 seconds took in wallclock time 8.7 seconds.
 
 STORE TCP FLOW RESULTS
   > Not enabled, so no TCP flow results are written
@@ -137,20 +135,20 @@ TIMING RESULTS
 [    0.0 -     0.0] (0.0 s) :: Configure run and logs directory
 [    0.0 -     0.0] (0.0 s) :: Configure simulator
 [    0.0 -     0.0] (0.0 s) :: Setup TCP parameters
-[    0.0 -    23.0] (23.0 s) :: Create initial single forwarding state
-[   23.0 -    71.2] (48.2 s) :: Setup routing arbiter on each node
-[   71.2 -    74.1] (2.9 s) :: Create initial single forwarding state
-[   74.1 -    74.1] (0.0 s) :: Set first GSL interface bandwidth
-[   74.1 -    74.1] (0.0 s) :: Determined pingmesh pairs
-[   74.1 -    74.1] (0.0 s) :: Remove previous pingmesh log files
-[   74.1 -    74.2] (0.0 s) :: Setup pingmesh servers
-[   74.2 -    74.2] (0.0 s) :: Setup pingmesh clients
-[   74.2 -    74.2] (0.0 s) :: Whatever is between previous timestamp and the simulation run
-[   74.2 -    85.6] (11.4 s) :: Run simulation
-[   85.6 -    85.6] (0.0 s) :: Write pingmesh log files
-[   85.6 -    86.1] (0.5 s) :: Destroy simulator
+[    0.0 -    17.0] (17.0 s) :: Create initial single forwarding state
+[   17.0 -    53.5] (36.5 s) :: Setup routing arbiter on each node
+[   53.5 -    55.2] (1.7 s) :: Create initial single forwarding state
+[   55.2 -    55.2] (0.0 s) :: Set first GSL interface bandwidth
+[   55.2 -    55.2] (0.0 s) :: Determined pingmesh pairs
+[   55.2 -    55.2] (0.0 s) :: Remove previous pingmesh log files
+[   55.2 -    55.2] (0.0 s) :: Setup pingmesh servers
+[   55.2 -    55.2] (0.0 s) :: Setup pingmesh clients
+[   55.2 -    55.2] (0.0 s) :: Whatever is between previous timestamp and the simulation run
+[   55.2 -    63.9] (8.7 s) :: Run simulation
+[   63.9 -    63.9] (0.0 s) :: Write pingmesh log files
+[   63.9 -    64.2] (0.3 s) :: Destroy simulator
 
 BASIC SIMULATION END
-  > Date... Thursday February 19, 2026
-  > Time... 00:41:23
+  > Date... Wednesday February 25, 2026
+  > Time... 21:31:43
 

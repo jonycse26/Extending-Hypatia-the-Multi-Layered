@@ -9,7 +9,8 @@ def generate_multilayer_isls(
         meo_n_sats_per_orbit,
         leo_num_sats,  # Total number of LEO satellites (for offset)
         isl_shift=0,
-        max_cross_layer_isl_length_m=None
+        max_cross_layer_isl_length_m=None,
+        max_leo_per_meo=5
 ):
     """
     Generate multi-layer ISL file with LEO ISLs, MEO ISLs, and cross-layer ISLs.
@@ -22,6 +23,7 @@ def generate_multilayer_isls(
     :param leo_num_sats:              Total number of LEO satellites (for MEO offset)
     :param isl_shift:                 ISL shift between orbits (for LEO)
     :param max_cross_layer_isl_length_m: Maximum distance for cross-layer ISLs (optional)
+    :param max_leo_per_meo:          Maximum number of LEO satellites connected to each MEO (default 5)
     """
     
     list_isls = []
@@ -65,28 +67,26 @@ def generate_multilayer_isls(
             list_isls.append((min(sat, sat_adjacent_orbit), max(sat, sat_adjacent_orbit)))
     
     # Generate cross-layer ISLs (LEO to MEO)
-    # Strategy: Connect every LEO satellite to at least one MEO satellite
-    # This ensures every LEO can directly access MEO for routing, simplifying the proof-of-concept
-    
-    # For each LEO satellite, find at least one MEO satellite to connect to
-    # Use a regular spacing pattern to distribute connections across MEO satellites
+    # Constraint: Each MEO satellite is connected to at most max_leo_per_meo LEO satellites (default 5).
+    # We assign LEOs to MEOs by mapping; each MEO accepts up to max_leo_per_meo LEOs.
+    meo_n_sats = meo_n_orbits * meo_n_sats_per_orbit
+    leo_count_per_meo = {}  # meo_sat -> number of LEOs already connected
+
     for leo_i in range(leo_n_orbits):
         for leo_j in range(leo_n_sats_per_orbit):
             leo_sat = leo_i * leo_n_sats_per_orbit + leo_j
-            
-            # Ensure we don't exceed LEO satellite count
-            if leo_sat < leo_num_sats:
-                # Find a corresponding MEO satellite
-                # Map LEO orbit to MEO orbit (distribute LEO orbits across MEO orbits)
-                meo_orbit_idx = (leo_i * meo_n_orbits) // leo_n_orbits
-                # Map LEO satellite position to MEO satellite position
-                meo_sat_idx = (leo_j * meo_n_sats_per_orbit) // leo_n_sats_per_orbit
-                meo_sat = meo_idx_offset + meo_orbit_idx * meo_n_sats_per_orbit + meo_sat_idx
-                
-                # Ensure we don't exceed MEO satellite count
-                if meo_sat < leo_num_sats + (meo_n_orbits * meo_n_sats_per_orbit):
-                    # Add cross-layer ISL
-                    list_isls.append((min(leo_sat, meo_sat), max(leo_sat, meo_sat)))
+            if leo_sat >= leo_num_sats:
+                continue
+            meo_orbit_idx = (leo_i * meo_n_orbits) // leo_n_orbits
+            meo_sat_idx = (leo_j * meo_n_sats_per_orbit) // leo_n_sats_per_orbit
+            meo_sat = meo_idx_offset + meo_orbit_idx * meo_n_sats_per_orbit + meo_sat_idx
+            if meo_sat >= leo_num_sats + meo_n_sats:
+                continue
+            # Cap: this MEO can have at most max_leo_per_meo LEO connections
+            n = leo_count_per_meo.get(meo_sat, 0)
+            if n < max_leo_per_meo:
+                list_isls.append((min(leo_sat, meo_sat), max(leo_sat, meo_sat)))
+                leo_count_per_meo[meo_sat] = n + 1
     
     # Remove duplicates and sort
     list_isls = list(set(list_isls))
