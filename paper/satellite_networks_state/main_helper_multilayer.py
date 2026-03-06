@@ -63,10 +63,9 @@ class MainHelperMultiLayer:
         EARTH_RADIUS = 6378135.0
         
         # LEO GSL and ISL ranges
-        # Using elevation angle of 5 degrees (reduced from 10° to further improve coverage)
-        # Lower elevation angle = larger coverage area = more satellites in range
-        # 5° gives ~7,228 km GSL range (vs 3,628 km at 10°) - significantly improves path availability
-        LEO_SATELLITE_CONE_RADIUS_M = LEO_ALTITUDE_M / math.tan(math.radians(5.0))
+        # Using elevation angle of 10 degrees 
+        
+        LEO_SATELLITE_CONE_RADIUS_M = LEO_ALTITUDE_M / math.tan(math.radians(10.0))
         self.LEO_MAX_GSL_LENGTH_M = math.sqrt(math.pow(LEO_SATELLITE_CONE_RADIUS_M, 2) + math.pow(LEO_ALTITUDE_M, 2))
         # ISLs are not allowed to dip below 80 km altitude
         self.LEO_MAX_ISL_LENGTH_M = 2 * math.sqrt(
@@ -74,9 +73,7 @@ class MainHelperMultiLayer:
         )
         
         # MEO GSL and ISL ranges
-        # Using elevation angle of 5 degrees (reduced from 10° to further improve coverage)
-        # Lower elevation angle = larger coverage area = more satellites in range
-        # Note: MEO satellites are at higher altitude, so even at 5° they have very large coverage (~114,737 km)
+        # Using elevation angle of 5 degrees
         MEO_SATELLITE_CONE_RADIUS_M = MEO_ALTITUDE_M / math.tan(math.radians(5.0))
         self.MEO_MAX_GSL_LENGTH_M = math.sqrt(math.pow(MEO_SATELLITE_CONE_RADIUS_M, 2) + math.pow(MEO_ALTITUDE_M, 2))
         self.MEO_MAX_ISL_LENGTH_M = 2 * math.sqrt(
@@ -256,7 +253,10 @@ class MainHelperMultiLayer:
                 idx_offset=0
             )
         elif isl_selection == "isls_plus_grid_with_cross_layer":
-            # LEO ISLs + MEO ISLs + Cross-layer ISLs
+            # LEO ISLs + MEO ISLs + Cross-layer ISLs.
+            # max_leo_per_meo set so every LEO gets at least one MEO link (each MEO covers ~ceil(LEO/MEO) LEOs).
+            # Then every destination LEO has a gateway -> MEO can be used when hop/distance threshold is met.
+            _max_leo_per_meo = max(40, (self.LEO_NUM_SATS + self.MEO_NUM_SATS - 1) // self.MEO_NUM_SATS)
             satgen.generate_multilayer_isls(
                 output_generated_data_dir + "/" + name + "/isls.txt",
                 self.LEO_NUM_ORBS,
@@ -265,7 +265,8 @@ class MainHelperMultiLayer:
                 self.MEO_NUM_SATS_PER_ORB,
                 self.LEO_NUM_SATS,
                 isl_shift=0,
-                max_cross_layer_isl_length_m=self.MAX_CROSS_LAYER_ISL_LENGTH_M
+                max_cross_layer_isl_length_m=self.MAX_CROSS_LAYER_ISL_LENGTH_M,
+                max_leo_per_meo=_max_leo_per_meo
             )
         elif isl_selection == "isls_none":
             satgen.generate_empty_isls(

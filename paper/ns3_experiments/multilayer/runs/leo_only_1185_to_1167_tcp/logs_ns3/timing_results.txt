@@ -1,15 +1,15 @@
 [    0.0 -     0.0] (0.0 s) :: Configure run and logs directory
 [    0.0 -     0.0] (0.0 s) :: Configure simulator
 [    0.0 -     0.0] (0.0 s) :: Setup TCP parameters
-[    0.0 -    18.5] (18.5 s) :: Create initial single forwarding state
-[   18.5 -    52.8] (34.3 s) :: Setup routing arbiter on each node
-[   52.8 -    55.2] (2.4 s) :: Create initial single forwarding state
-[   55.2 -    55.2] (0.0 s) :: Set first GSL interface bandwidth
-[   55.2 -    55.2] (0.0 s) :: Read flow schedule
-[   55.2 -    55.2] (0.0 s) :: Remove previous flow log files
-[   55.2 -    55.3] (0.0 s) :: Setup TCP flow sinks
-[   55.3 -    55.3] (0.0 s) :: Setup traffic TCP flow starter
-[   55.3 -    55.3] (0.0 s) :: Whatever is between previous timestamp and the simulation run
-[   55.3 -    88.0] (32.7 s) :: Run simulation
-[   88.0 -    88.0] (0.0 s) :: Write TCP flow log files
-[   88.0 -    88.3] (0.3 s) :: Destroy simulator
+[    0.0 -    18.6] (18.6 s) :: Create initial single forwarding state
+[   18.6 -    56.7] (38.1 s) :: Setup routing arbiter on each node
+[   56.7 -    59.0] (2.2 s) :: Create initial single forwarding state
+[   59.0 -    59.0] (0.0 s) :: Set first GSL interface bandwidth
+[   59.0 -    59.0] (0.0 s) :: Read flow schedule
+[   59.0 -    59.0] (0.0 s) :: Remove previous flow log files
+[   59.0 -    59.0] (0.0 s) :: Setup TCP flow sinks
+[   59.0 -    59.0] (0.0 s) :: Setup traffic TCP flow starter
+[   59.0 -    59.0] (0.0 s) :: Whatever is between previous timestamp and the simulation run
+[   59.0 -    91.8] (32.8 s) :: Run simulation
+[   91.8 -    91.8] (0.0 s) :: Write TCP flow log files
+[   91.8 -    92.4] (0.6 s) :: Destroy simulator

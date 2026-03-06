@@ -1,2 +1,2 @@
 TCP Flow ID     Source    Target    Size            Start time (ns)   End time (ns)     Duration        Sent            Progress     Avg. rate       Finished?     Metadata
-0               1210      1265      800000.00 Mbit  0                 5000000000        5000.00 ms      20.92 Mbit      0.0%         4.2 Mbit/s      NO_ONGOING    
+0               1210      1265      800000.00 Mbit  0                 5000000000        5000.00 ms      11.77 Mbit      0.0%         2.4 Mbit/s      NO_ONGOING    
