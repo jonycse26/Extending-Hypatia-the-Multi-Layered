@@ -1,10 +1,10 @@
 Waf: Entering directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Waf: Leaving directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Build commands will be stored in build/debug_all/compile_commands.json
-'build' finished successfully (3.647s)
+'build' finished successfully (4.080s)
 BASIC SIMULATION START
-  > Date... Thursday March  5, 2026
-  > Time... 13:32:34
+  > Date... Monday March  9, 2026
+  > Time... 22:57:33
 
 CONFIGURE RUN DIRECTORY
   > Run directory: ../../paper/ns3_experiments/multilayer/runs/threshold_test_1209_to_1277_pings
@@ -67,15 +67,15 @@ SATELLITE NETWORK
        (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)
        Progress (as there are more entries, it becomes slower):
        - 10.06% (t = 0.27 s, update took 0.27 s)
-       - 20.12% (t = 0.52 s, update took 0.25 s)
-       - 30.19% (t = 0.79 s, update took 0.27 s)
-       - 40.25% (t = 1.04 s, update took 0.25 s)
-       - 50.31% (t = 1.29 s, update took 0.25 s)
-       - 60.37% (t = 1.55 s, update took 0.26 s)
-       - 70.43% (t = 1.85 s, update took 0.30 s)
-       - 80.50% (t = 2.13 s, update took 0.28 s)
-       - 90.56% (t = 2.31 s, update took 0.18 s)
-       - 100.00% (t = 2.47 s, update took 0.16 s)
+       - 20.12% (t = 0.50 s, update took 0.23 s)
+       - 30.19% (t = 0.66 s, update took 0.17 s)
+       - 40.25% (t = 0.85 s, update took 0.18 s)
+       - 50.31% (t = 1.05 s, update took 0.20 s)
+       - 60.37% (t = 1.38 s, update took 0.33 s)
+       - 70.43% (t = 1.60 s, update took 0.22 s)
+       - 80.50% (t = 1.86 s, update took 0.26 s)
+       - 90.56% (t = 2.05 s, update took 0.19 s)
+       - 100.00% (t = 2.38 s, update took 0.33 s)
     >> Finished assigning IPs
     >> Removing traffic control layers (qdiscs)...
     >> Finished removing GSL queueing disciplines
@@ -109,7 +109,7 @@ PINGMESH SCHEDULER
 SIMULATION
 Running the simulation for 5.00 simulation seconds...
 Finished simulation.
-Simulation of 5.0 seconds took in wallclock time 7.1 seconds.
+Simulation of 5.0 seconds took in wallclock time 10.0 seconds.
 
 STORE TCP FLOW RESULTS
   > Not enabled, so no TCP flow results are written
@@ -135,20 +135,20 @@ TIMING RESULTS
 [    0.0 -     0.0] (0.0 s) :: Configure run and logs directory
 [    0.0 -     0.0] (0.0 s) :: Configure simulator
 [    0.0 -     0.0] (0.0 s) :: Setup TCP parameters
-[    0.0 -    19.8] (19.8 s) :: Create initial single forwarding state
-[   19.8 -    56.1] (36.3 s) :: Setup routing arbiter on each node
-[   56.1 -    57.8] (1.7 s) :: Create initial single forwarding state
-[   57.8 -    57.8] (0.0 s) :: Set first GSL interface bandwidth
-[   57.8 -    57.8] (0.0 s) :: Determined pingmesh pairs
-[   57.8 -    57.8] (0.0 s) :: Remove previous pingmesh log files
-[   57.8 -    57.8] (0.0 s) :: Setup pingmesh servers
-[   57.8 -    57.8] (0.0 s) :: Setup pingmesh clients
-[   57.8 -    57.8] (0.0 s) :: Whatever is between previous timestamp and the simulation run
-[   57.8 -    64.9] (7.1 s) :: Run simulation
-[   64.9 -    64.9] (0.0 s) :: Write pingmesh log files
-[   64.9 -    65.1] (0.2 s) :: Destroy simulator
+[    0.0 -    20.7] (20.7 s) :: Create initial single forwarding state
+[   20.7 -    57.2] (36.5 s) :: Setup routing arbiter on each node
+[   57.2 -    58.9] (1.7 s) :: Create initial single forwarding state
+[   58.9 -    58.9] (0.0 s) :: Set first GSL interface bandwidth
+[   58.9 -    58.9] (0.0 s) :: Determined pingmesh pairs
+[   58.9 -    58.9] (0.0 s) :: Remove previous pingmesh log files
+[   58.9 -    58.9] (0.0 s) :: Setup pingmesh servers
+[   58.9 -    58.9] (0.0 s) :: Setup pingmesh clients
+[   58.9 -    58.9] (0.0 s) :: Whatever is between previous timestamp and the simulation run
+[   58.9 -    68.9] (10.0 s) :: Run simulation
+[   68.9 -    68.9] (0.0 s) :: Write pingmesh log files
+[   68.9 -    69.2] (0.3 s) :: Destroy simulator
 
 BASIC SIMULATION END
-  > Date... Thursday March  5, 2026
-  > Time... 13:33:39
+  > Date... Monday March  9, 2026
+  > Time... 22:58:42
 

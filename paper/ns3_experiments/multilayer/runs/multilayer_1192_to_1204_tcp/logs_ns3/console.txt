@@ -1,10 +1,10 @@
 Waf: Entering directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Waf: Leaving directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Build commands will be stored in build/debug_all/compile_commands.json
-'build' finished successfully (3.268s)
+'build' finished successfully (5.164s)
 BASIC SIMULATION START
-  > Date... Thursday March  5, 2026
-  > Time... 13:21:29
+  > Date... Monday March  9, 2026
+  > Time... 22:46:19
 
 CONFIGURE RUN DIRECTORY
   > Run directory: ../../paper/ns3_experiments/multilayer/runs/multilayer_1192_to_1204_tcp
@@ -66,16 +66,16 @@ SATELLITE NETWORK
     >> Assigning IP addresses...
        (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)
        Progress (as there are more entries, it becomes slower):
-       - 10.06% (t = 0.32 s, update took 0.32 s)
-       - 20.12% (t = 0.64 s, update took 0.32 s)
-       - 30.19% (t = 0.92 s, update took 0.27 s)
-       - 40.25% (t = 1.20 s, update took 0.28 s)
-       - 50.31% (t = 1.61 s, update took 0.41 s)
-       - 60.37% (t = 1.85 s, update took 0.25 s)
-       - 70.43% (t = 2.11 s, update took 0.25 s)
-       - 80.50% (t = 2.38 s, update took 0.28 s)
-       - 90.56% (t = 2.64 s, update took 0.26 s)
-       - 100.00% (t = 2.87 s, update took 0.23 s)
+       - 10.06% (t = 0.21 s, update took 0.21 s)
+       - 20.12% (t = 0.45 s, update took 0.24 s)
+       - 30.19% (t = 0.71 s, update took 0.26 s)
+       - 40.25% (t = 0.97 s, update took 0.27 s)
+       - 50.31% (t = 1.27 s, update took 0.29 s)
+       - 60.37% (t = 1.52 s, update took 0.25 s)
+       - 70.43% (t = 1.77 s, update took 0.25 s)
+       - 80.50% (t = 2.03 s, update took 0.27 s)
+       - 90.56% (t = 2.28 s, update took 0.24 s)
+       - 100.00% (t = 2.52 s, update took 0.25 s)
     >> Finished assigning IPs
     >> Removing traffic control layers (qdiscs)...
     >> Finished removing GSL queueing disciplines
@@ -108,7 +108,7 @@ PINGMESH SCHEDULER
 SIMULATION
 Running the simulation for 5.00 simulation seconds...
 Finished simulation.
-Simulation of 5.0 seconds took in wallclock time 8.7 seconds.
+Simulation of 5.0 seconds took in wallclock time 8.3 seconds.
 
 STORE TCP FLOW RESULTS
   > Opening TCP flow log files:
@@ -136,20 +136,20 @@ TIMING RESULTS
 [    0.0 -     0.0] (0.0 s) :: Configure run and logs directory
 [    0.0 -     0.0] (0.0 s) :: Configure simulator
 [    0.0 -     0.0] (0.0 s) :: Setup TCP parameters
-[    0.0 -    19.9] (19.9 s) :: Create initial single forwarding state
-[   19.9 -    69.7] (49.8 s) :: Setup routing arbiter on each node
-[   69.7 -    74.0] (4.3 s) :: Create initial single forwarding state
-[   74.0 -    74.3] (0.3 s) :: Set first GSL interface bandwidth
-[   74.3 -    74.3] (0.0 s) :: Read flow schedule
-[   74.3 -    74.3] (0.0 s) :: Remove previous flow log files
-[   74.3 -    74.4] (0.1 s) :: Setup TCP flow sinks
-[   74.4 -    74.4] (0.0 s) :: Setup traffic TCP flow starter
-[   74.4 -    74.4] (0.0 s) :: Whatever is between previous timestamp and the simulation run
-[   74.4 -    83.1] (8.7 s) :: Run simulation
-[   83.1 -    83.1] (0.0 s) :: Write TCP flow log files
-[   83.1 -    84.0] (0.9 s) :: Destroy simulator
+[    0.0 -    18.5] (18.5 s) :: Create initial single forwarding state
+[   18.5 -    78.3] (59.8 s) :: Setup routing arbiter on each node
+[   78.3 -    81.2] (2.9 s) :: Create initial single forwarding state
+[   81.2 -    81.3] (0.1 s) :: Set first GSL interface bandwidth
+[   81.3 -    81.3] (0.0 s) :: Read flow schedule
+[   81.3 -    81.3] (0.0 s) :: Remove previous flow log files
+[   81.3 -    81.3] (0.1 s) :: Setup TCP flow sinks
+[   81.3 -    81.3] (0.0 s) :: Setup traffic TCP flow starter
+[   81.3 -    81.3] (0.0 s) :: Whatever is between previous timestamp and the simulation run
+[   81.3 -    89.6] (8.3 s) :: Run simulation
+[   89.6 -    89.6] (0.0 s) :: Write TCP flow log files
+[   89.6 -    90.0] (0.4 s) :: Destroy simulator
 
 BASIC SIMULATION END
-  > Date... Thursday March  5, 2026
-  > Time... 13:22:53
+  > Date... Monday March  9, 2026
+  > Time... 22:47:49
 

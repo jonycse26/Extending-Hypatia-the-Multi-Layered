@@ -6,13 +6,7 @@
 #         Step 2: ensure that entry MEO can reach a gateway MEO (MEO-only)
 #         Then inside MEO: route to gateway, then exit to dst_sat
 # Case C: curr is LEO and use_meo == False -> LEO-only routing to dst_sat
-#
-# IMPORTANT:
-# - LEO routing uses leo_subgraph + dist_leo only
-# - Real LEO hop check uses hop_leo (unweighted BFS on leo_subgraph)
-# - MEO routing uses meo_subgraph + dist_meo + hop_meo only
-# - Cross-layer is only via leo_to_meo_neighbors edges
-# - A MEO may forward to dst_sat only if it has a direct edge to dst_sat (gateway)
+
 
 from .fstate_calculation import *
 import math
@@ -33,14 +27,35 @@ def algorithm_free_one_multi_layer(
         enable_verbose_logs,
         leo_num_sats,
         meo_threshold_distance_m=10000000.0,
-        meo_threshold_hops=3
+        meo_threshold_hops=3,
+        path_diversity_epsilon_ratio=0.10,
+        num_time_steps_for_diversity=6
 ):
-
+    # Path diversity: we take the top-k next-hop options 
     def is_leo(sid: int) -> bool:
         return sid < leo_num_sats
 
     def is_meo(sid: int) -> bool:
         return sid >= leo_num_sats
+
+    # Time-step index (0, 1, 2, ... per 1s step) for round-robin path selection
+    _time_step_index = time_since_epoch_ns // 1_000_000_000
+
+    def pick_best_tiebreak(candidates):
+        """Take top-k by score (within epsilon), round-robin by time step."""
+        if not candidates:
+            return None
+        best_score = min(s for s, _ in candidates)
+        threshold = best_score * (1.0 + path_diversity_epsilon_ratio) if path_diversity_epsilon_ratio > 0 and best_score > 0 else best_score
+        within = sorted([(s, n) for s, n in candidates if s <= threshold], key=lambda x: (x[0], x[1]))
+        k = min(num_time_steps_for_diversity, len(within))
+        top_k_nodes = [n for _, n in within[:k]]
+        return top_k_nodes[_time_step_index % len(top_k_nodes)]
+
+    def drop_2cycle_candidates(candidates, curr_node, dst_gs_node_id, fstate_dict):
+        """Remove candidates n where n already forwards back to curr_node (avoids LEO 2-cycles e.g. 46<->80)."""
+        filtered = [(s, n) for s, n in candidates if fstate_dict.get((n, dst_gs_node_id), (-1, -1, -1))[0] != curr_node]
+        return filtered if filtered else candidates
 
     if enable_verbose_logs:
         print("\nALGORITHM: FREE ONE MULTI-LAYER (LEO/MEO subgraphs)")
@@ -93,20 +108,19 @@ def algorithm_free_one_multi_layer(
     # ----------------------------
     # Helper: pick a gateway MEO for a given dst_sat, reachable from a MEO node
     # gateway = MEO node that has a direct edge to dst_sat
-    # choose smallest hop distance from meo_from; tie-break by exit weight
     # ----------------------------
     def pick_gateway_from_meo(meo_from: int, dst_sat: int):
         best_g = None
-        best_key = (float("inf"), float("inf"))  # (hop, exit_weight)
+        best_key = (float("inf"), float("inf"))  
 
         for g in meo_nodes:
             if not sat_net_graph_only_satellites_with_isls.has_edge(g, dst_sat):
-                continue  # must be a gateway to this dst_sat
+                continue  
 
             try:
                 h = hop_meo[meo_from][g]
             except KeyError:
-                continue  # not reachable inside MEO
+                continue  
 
             exit_w = sat_net_graph_only_satellites_with_isls.edges[(g, dst_sat)]["weight"]
             key = (float(h), float(exit_w))
@@ -177,8 +191,10 @@ def algorithm_free_one_multi_layer(
 
         # ----------------------------
         # SATELLITE -> GS
+        # Process curr in REVERSE order so the smaller-index node sees the larger's next_hop
+        # and can avoid choosing it 
         # ----------------------------
-        for curr in range(len(satellites)):
+        for curr in range(len(satellites) - 1, -1, -1):
             for dst_gid in range(len(ground_stations)):
 
                 dst_gs_node_id = len(satellites) + dst_gid
@@ -212,7 +228,7 @@ def algorithm_free_one_multi_layer(
                     dst_sat = possibilities[0][1]
                     distance_to_ground_station_m = possibilities[0][0]
 
-                    # Decide whether to use MEO (only evaluated if curr is LEO)
+                    # Decide whether to use MEO 
                     use_meo = False
                     if is_leo(curr):
                         if distance_to_ground_station_m > meo_threshold_distance_m:
@@ -237,17 +253,15 @@ def algorithm_free_one_multi_layer(
                     # CASE C: curr is LEO and use_meo == False -> LEO-only to dst_sat
                     # ============================================================
                     elif is_leo(curr) and not use_meo:
-                        best_score = float("inf")
-                        best_next = None
-
+                        candidates = []
                         for neighbor_id in leo_subgraph.neighbors(curr):
                             score = (
                                 leo_subgraph.edges[(curr, neighbor_id)]["weight"]
                                 + d_leo(neighbor_id, dst_sat)
                             )
-                            if score < best_score:
-                                best_score = score
-                                best_next = neighbor_id
+                            candidates.append((score, neighbor_id))
+                        candidates = drop_2cycle_candidates(candidates, curr, dst_gs_node_id, fstate)
+                        best_next = pick_best_tiebreak(candidates)
 
                         if best_next is not None:
                             next_hop_decision = (
@@ -266,7 +280,7 @@ def algorithm_free_one_multi_layer(
                         if is_leo(curr):
                             best_handoff_leo = None
                             best_entry_meo = None
-                            best_key = (float("inf"), float("inf"), float("inf"))  # (entry_cost, hop_to_gateway, exit_weight)
+                            best_key = (float("inf"), float("inf"), float("inf"))  
 
                             # choose a LEO handoff node l, then cross-layer edge l->m
                             for l in leo_nodes:
@@ -293,18 +307,17 @@ def algorithm_free_one_multi_layer(
                                         best_handoff_leo = l
                                         best_entry_meo = m
 
-                            # fallback if no valid entry -> LEO-only (safe)
+                            # fallback if no valid entry -> LEO-only 
                             if best_entry_meo is None or best_handoff_leo is None:
-                                best_score = float("inf")
-                                best_next = None
+                                candidates = []
                                 for neighbor_id in leo_subgraph.neighbors(curr):
                                     score = (
                                         leo_subgraph.edges[(curr, neighbor_id)]["weight"]
                                         + d_leo(neighbor_id, dst_sat)
                                     )
-                                    if score < best_score:
-                                        best_score = score
-                                        best_next = neighbor_id
+                                    candidates.append((score, neighbor_id))
+                                candidates = drop_2cycle_candidates(candidates, curr, dst_gs_node_id, fstate)
+                                best_next = pick_best_tiebreak(candidates)
 
                                 if best_next is not None:
                                     next_hop_decision = (
@@ -314,11 +327,9 @@ def algorithm_free_one_multi_layer(
                                     )
 
                             else:
-                                # curr is LEO + use_meo: one-hop lookahead toward best_handoff_leo or direct cross-link to best_entry_meo
+                                # curr is LEO + use_meo: collect candidates (LEO toward handoff or cross-link to best_entry_meo)
                                 w_handoff_to_entry = sat_net_graph_only_satellites_with_isls.edges[(best_handoff_leo, best_entry_meo)]["weight"]
-                                best_score = float("inf")
-                                best_next = None
-
+                                candidates_b = []
                                 for neighbor_id in leo_subgraph.neighbors(curr):
                                     d_n_to_handoff = d_leo(neighbor_id, best_handoff_leo)
                                     if math.isinf(d_n_to_handoff):
@@ -328,18 +339,15 @@ def algorithm_free_one_multi_layer(
                                         + d_n_to_handoff
                                         + w_handoff_to_entry
                                     )
-                                    if score < best_score:
-                                        best_score = score
-                                        best_next = neighbor_id
+                                    candidates_b.append((score, neighbor_id))
 
-                                # Cross-link: curr -> best_entry_meo 
                                 for m, w_cross in leo_to_meo_neighbors.get(curr, []):
                                     if m == best_entry_meo:
-                                        if w_cross < best_score:
-                                            best_score = w_cross
-                                            best_next = m
+                                        candidates_b.append((w_cross, m))
                                         break
 
+                                candidates_b = drop_2cycle_candidates(candidates_b, curr, dst_gs_node_id, fstate)
+                                best_next = pick_best_tiebreak(candidates_b)
                                 if best_next is not None:
                                     pair = if_pair(curr, best_next)
                                     if pair is not None:
@@ -371,9 +379,7 @@ def algorithm_free_one_multi_layer(
                                     if h_curr is None:
                                         next_hop_decision = (-1, -1, -1)
                                     else:
-                                        best_score = float("inf")
-                                        best_next = None
-
+                                        candidates = []
                                         for neighbor_id in meo_subgraph.neighbors(curr):
                                             try:
                                                 h_nbr = hop_meo[neighbor_id][gateway_meo]
@@ -387,9 +393,10 @@ def algorithm_free_one_multi_layer(
                                                 meo_subgraph.edges[(curr, neighbor_id)]["weight"]
                                                 + d_meo(neighbor_id, gateway_meo)
                                             )
-                                            if score < best_score:
-                                                best_score = score
-                                                best_next = neighbor_id
+                                            candidates.append((score, neighbor_id))
+
+                                        candidates = drop_2cycle_candidates(candidates, curr, dst_gs_node_id, fstate)
+                                        best_next = pick_best_tiebreak(candidates)
 
                                         if best_next is None:
                                             next_hop_decision = (-1, -1, -1)
@@ -445,7 +452,7 @@ def algorithm_free_one_multi_layer(
 
                 next_hop_decision = (-1, -1, -1)
                 if possibilities:
-                    src_sat_id = possibilities[0][1]
+                    src_sat_id = pick_best_tiebreak(possibilities)
                     next_hop_decision = (
                         src_sat_id,
                         0,

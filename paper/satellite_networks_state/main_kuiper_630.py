@@ -33,21 +33,18 @@ BASE_NAME = "kuiper_630"
 NICE_NAME = "Kuiper-630"
 
 # KUIPER 630
-
-ECCENTRICITY = 0.0000001  # Circular orbits are zero, but pyephem does not permit 0, so lowest possible value
+# Circular orbits are zero, but pyephem does not permit 0, so lowest possible value
+ECCENTRICITY = 0.0000001  
 ARG_OF_PERIGEE_DEGREE = 0.0
 PHASE_DIFF = True
 
-################################################################
-# The below constants are taken from Kuiper's FCC filing as below:
-# [1]: https://www.itu.int/ITU-R/space/asreceived/Publication/DisplayPublication/8716
-################################################################
 
-MEAN_MOTION_REV_PER_DAY = 14.80  # Altitude ~630 km
-ALTITUDE_M = 630000  # Altitude ~630 km
+
+MEAN_MOTION_REV_PER_DAY = 14.80  
+ALTITUDE_M = 630000  
 
 # Using elevation angle of 30 degrees 
-# Possible values [1]: 20(min)/30/35/45
+# Possible values : 30/35/45
 SATELLITE_CONE_RADIUS_M = ALTITUDE_M / math.tan(math.radians(30.0))
 
 MAX_GSL_LENGTH_M = math.sqrt(math.pow(SATELLITE_CONE_RADIUS_M, 2) + math.pow(ALTITUDE_M, 2))

@@ -33,7 +33,7 @@ class MainHelperMultiLayer:
             MEO_NUM_SATS_PER_ORB,
             MEO_INCLINATION_DEGREE,
             # Cross-layer ISL parameters
-            MAX_CROSS_LAYER_ISL_LENGTH_M=None,  # If None, calculated automatically
+            MAX_CROSS_LAYER_ISL_LENGTH_M=None,  
     ):
         self.BASE_NAME = BASE_NAME
         self.NICE_NAME = NICE_NAME
@@ -64,7 +64,6 @@ class MainHelperMultiLayer:
         
         # LEO GSL and ISL ranges
         # Using elevation angle of 10 degrees 
-        
         LEO_SATELLITE_CONE_RADIUS_M = LEO_ALTITUDE_M / math.tan(math.radians(10.0))
         self.LEO_MAX_GSL_LENGTH_M = math.sqrt(math.pow(LEO_SATELLITE_CONE_RADIUS_M, 2) + math.pow(LEO_ALTITUDE_M, 2))
         # ISLs are not allowed to dip below 80 km altitude
@@ -82,26 +81,19 @@ class MainHelperMultiLayer:
         
         # Cross-layer ISL range
         if MAX_CROSS_LAYER_ISL_LENGTH_M is None:
-            # Maximum distance between LEO and MEO considering both altitudes
-            # For cross-layer links, we need to account for the larger separation
-            # Use a more generous calculation: maximum possible distance between
-            # a LEO satellite and a MEO satellite (when they're on opposite sides)
-            # Formula: sqrt((R+h_leo)^2 + (R+h_meo)^2 - 2*(R+h_leo)*(R+h_meo)*cos(180°))
-            # But with the constraint that the link can't dip below 80 km
-            # For simplicity, use a conservative estimate based on the maximum of both altitudes
+            
             max_altitude = max(LEO_ALTITUDE_M, MEO_ALTITUDE_M)
             min_altitude = min(LEO_ALTITUDE_M, MEO_ALTITUDE_M)
-            # Maximum distance considering both altitudes and minimum altitude constraint
-            # This is an approximation - actual max distance depends on orbital geometry
+
             self.MAX_CROSS_LAYER_ISL_LENGTH_M = 2 * math.sqrt(
                 math.pow(EARTH_RADIUS + max_altitude, 2) - math.pow(EARTH_RADIUS + 80000, 2)
             )
-            # Add some margin for cross-layer links (they can be longer)
-            self.MAX_CROSS_LAYER_ISL_LENGTH_M *= 1.2  # 20% margin
+            # Add some margin for cross-layer links 
+            self.MAX_CROSS_LAYER_ISL_LENGTH_M *= 1.2  
         else:
             self.MAX_CROSS_LAYER_ISL_LENGTH_M = MAX_CROSS_LAYER_ISL_LENGTH_M
         
-        # Use LEO GSL range for ground stations (ground stations connect to LEO)
+        # Use LEO GSL range for ground stations 
         self.MAX_GSL_LENGTH_M = self.LEO_MAX_GSL_LENGTH_M
         # Use maximum ISL length for overall ISL range
         self.MAX_ISL_LENGTH_M = max(self.LEO_MAX_ISL_LENGTH_M, self.MEO_MAX_ISL_LENGTH_M, self.MAX_CROSS_LAYER_ISL_LENGTH_M)
@@ -113,12 +105,12 @@ class MainHelperMultiLayer:
 
     def calculate(
             self,
-            output_generated_data_dir,      # Final directory in which the result will be placed
+            output_generated_data_dir,      
             duration_s,
             time_step_ms,
-            isl_selection,            # isls_{none, plus_grid, plus_grid_with_cross_layer}
-            gs_selection,             # ground_stations_{top_100, paris_moscow_grid}
-            dynamic_state_algorithm,  # algorithm_{free_one_only_{gs_relays,_over_isls}, paired_many_only_over_isls, free_one_multi_layer}
+            isl_selection,           
+            gs_selection,             
+            dynamic_state_algorithm,  
             num_threads
     ):
 
@@ -176,24 +168,22 @@ class MainHelperMultiLayer:
         # Merge TLE files
         print("Merging TLE files...")
         with open(output_generated_data_dir + "/" + name + "/tles.txt", "w+") as f_out:
-            # Write total number of orbits and satellites
-            # Format: <total_orbits> <total_sats_per_orbit> (for compatibility, we'll use max)
-            # Actually, the format expects single shell, so we'll write a combined format
-            total_sats = self.LEO_NUM_SATS + self.MEO_NUM_SATS
-            f_out.write("%d %d\n" % (1, total_sats))  # Single "orbit" with all satellites
+          
             
-            # Read and write LEO TLEs (skip first line which has orbit info)
+            total_sats = self.LEO_NUM_SATS + self.MEO_NUM_SATS
+            f_out.write("%d %d\n" % (1, total_sats))  
+            
+            # Read and write LEO TLEs 
             with open(output_generated_data_dir + "/" + name + "/tles_leo.txt", "r") as f_leo:
                 lines = f_leo.readlines()
-                for line in lines[1:]:  # Skip first line
+                for line in lines[1:]:  
                     f_out.write(line)
             
-            # Read and write MEO TLEs (skip first line, adjust satellite IDs)
-            # TLE format: name line, TLE line 1, TLE line 2 (repeated for each satellite)
+            # Read and write MEO TLEs 
             with open(output_generated_data_dir + "/" + name + "/tles_meo.txt", "r") as f_meo:
-                lines = f_meo.readlines()[1:]  # Skip first line (orbit info)
+                lines = f_meo.readlines()[1:]  
                 
-                # Process in groups of 3 lines (name, TLE line 1, TLE line 2)
+                # Process in groups of 3 lines 
                 for i in range(0, len(lines), 3):
                     if i + 2 >= len(lines):
                         break
@@ -254,8 +244,6 @@ class MainHelperMultiLayer:
             )
         elif isl_selection == "isls_plus_grid_with_cross_layer":
             # LEO ISLs + MEO ISLs + Cross-layer ISLs.
-            # max_leo_per_meo set so every LEO gets at least one MEO link (each MEO covers ~ceil(LEO/MEO) LEOs).
-            # Then every destination LEO has a gateway -> MEO can be used when hop/distance threshold is met.
             _max_leo_per_meo = max(40, (self.LEO_NUM_SATS + self.MEO_NUM_SATS - 1) // self.MEO_NUM_SATS)
             satgen.generate_multilayer_isls(
                 output_generated_data_dir + "/" + name + "/isls.txt",
@@ -281,7 +269,7 @@ class MainHelperMultiLayer:
             output_generated_data_dir + "/" + name + "/description.txt",
             self.MAX_GSL_LENGTH_M,
             self.MAX_ISL_LENGTH_M,
-            leo_num_sats=self.LEO_NUM_SATS  # Store LEO/MEO split info
+            leo_num_sats=self.LEO_NUM_SATS  
         )
 
         # GSL interfaces
@@ -300,19 +288,19 @@ class MainHelperMultiLayer:
         print("Generating GSL interfaces info..")
         satgen.generate_simple_gsl_interfaces_info(
             output_generated_data_dir + "/" + name + "/gsl_interfaces_info.txt",
-            self.TOTAL_NUM_SATS,  # Total satellites (LEO + MEO)
+            self.TOTAL_NUM_SATS,  
             len(ground_stations),
-            gsl_interfaces_per_satellite,  # GSL interfaces per satellite
-            1,  # (GSL) Interfaces per ground station
-            1,  # Aggregate max. bandwidth satellite (unit unspecified)
-            1   # Aggregate max. bandwidth ground station (same unspecified unit)
+            gsl_interfaces_per_satellite,  
+            1,  
+            1,  
+            1   
         )
 
         # Forwarding state
         print("Generating forwarding state...")
         satgen.help_dynamic_state(
             output_generated_data_dir,
-            num_threads,  # Number of threads
+            num_threads,  
             name,
             time_step_ms,
             duration_s,

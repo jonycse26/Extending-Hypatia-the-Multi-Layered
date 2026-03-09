@@ -7,7 +7,7 @@ def generate_multilayer_isls(
         leo_n_sats_per_orbit,
         meo_n_orbits,
         meo_n_sats_per_orbit,
-        leo_num_sats,  # Total number of LEO satellites (for offset)
+        leo_num_sats,  
         isl_shift=0,
         max_cross_layer_isl_length_m=None,
         max_leo_per_meo=5
@@ -50,7 +50,7 @@ def generate_multilayer_isls(
     if meo_n_orbits < 3 or meo_n_sats_per_orbit < 3:
         raise ValueError("MEO: Number of orbits and satellites per orbit must each be at least 3")
     
-    meo_idx_offset = leo_num_sats  # MEO satellites start after LEO satellites
+    meo_idx_offset = leo_num_sats  
     
     for i in range(meo_n_orbits):
         for j in range(meo_n_sats_per_orbit):
@@ -67,10 +67,10 @@ def generate_multilayer_isls(
             list_isls.append((min(sat, sat_adjacent_orbit), max(sat, sat_adjacent_orbit)))
     
     # Generate cross-layer ISLs (LEO to MEO)
-    # Constraint: Each MEO satellite is connected to at most max_leo_per_meo LEO satellites (default 5).
-    # We assign LEOs to MEOs by mapping; each MEO accepts up to max_leo_per_meo LEOs.
+    # Each LEO is assigned to exactly one MEO by (meo_orbit_idx, meo_sat_idx). If max_leo_per_meo
+    # is large enough (e.g. >= ceil(leo_num_sats / meo_n_sats)), every LEO gets one cross-layer link.
     meo_n_sats = meo_n_orbits * meo_n_sats_per_orbit
-    leo_count_per_meo = {}  # meo_sat -> number of LEOs already connected
+    leo_count_per_meo = {}
 
     for leo_i in range(leo_n_orbits):
         for leo_j in range(leo_n_sats_per_orbit):
@@ -82,7 +82,7 @@ def generate_multilayer_isls(
             meo_sat = meo_idx_offset + meo_orbit_idx * meo_n_sats_per_orbit + meo_sat_idx
             if meo_sat >= leo_num_sats + meo_n_sats:
                 continue
-            # Cap: this MEO can have at most max_leo_per_meo LEO connections
+            # Cap: each MEO has at most max_leo_per_meo LEO connections
             n = leo_count_per_meo.get(meo_sat, 0)
             if n < max_leo_per_meo:
                 list_isls.append((min(leo_sat, meo_sat), max(leo_sat, meo_sat)))
