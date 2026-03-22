@@ -3,20 +3,26 @@
 Example 2: Multi-Layer vs LEO-Only Performance Comparison
 
 This example compares the performance of multi-layer (LEO + MEO) vs LEO-only
-constellations for long-distance communication. It demonstrates:
-- Reduced latency for long-distance pairs via MEO backhaul
-- Lower LEO ISL utilization (traffic offloaded to MEO)
-- Improved path efficiency for distances > 10,000 km
+constellations for the same three city pairs as run_list.experiment1_pairs_*:
+Mumbai–Lima, Lima–Karachi, Tokyo–Buenos-Aires.
 
-This experiment evaluates the benefit of adding MEO satellites as backhaul.
+It demonstrates:
+- Reduced latency for long-distance pairs via MEO backhaul (where applicable)
+- Lower LEO ISL utilization (traffic offloaded to MEO)
+- Path efficiency differences between multi-layer and LEO-only
+
+Note: step_1_generate_runs.py already creates the same multilayer + LEO-only TCP and ping
+runs (experiment 1). Use this script for the six TCP configs only, or when step_1 would wipe
+runs/ and you want to add just these. main() chdirs to this directory so templates/ resolve.
 """
 
 import exputil
 import os
 import sys
 
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _SCRIPT_DIR)
 
 try:
     from run_list import *
@@ -26,22 +32,18 @@ except ImportError:
 
 local_shell = exputil.LocalShell()
 
-# Test pairs for comparison (long-distance pairs that benefit from MEO)
+# Same three pairs as run_list.experiment1_pairs_leo / experiment1_pairs_multilayer
 COMPARISON_PAIRS = [
     {
-        "from_id_leo": 1174,
-        "to_id_leo": 1229,
-        "from_id_multilayer": 1174 + OFFSET_DIFF,
-        "to_id_multilayer": 1229 + OFFSET_DIFF,
-        "description": "Rio de Janeiro to St. Petersburg (~11,000 km)"
-    },
-    {
-        "from_id_leo": 1173,
-        "to_id_leo": 1241,
-        "from_id_multilayer": 1173 + OFFSET_DIFF,
-        "to_id_multilayer": 1241 + OFFSET_DIFF,
-        "description": "Manila to Dalian (~2,800 km)"
-    },
+        "from_id_leo": f_leo,
+        "to_id_leo": t_leo,
+        "from_id_multilayer": f_ml,
+        "to_id_multilayer": t_ml,
+        "description": desc,
+    }
+    for (f_leo, t_leo, desc), (f_ml, t_ml, _) in zip(
+        experiment1_pairs_leo, experiment1_pairs_multilayer
+    )
 ]
 
 def create_run_config(pair, is_multilayer):
@@ -125,6 +127,7 @@ def main():
     """
     Generate run configurations for multi-layer vs LEO-only comparison.
     """
+    os.chdir(_SCRIPT_DIR)
     print("=" * 70)
     print("Example 2: Multi-Layer vs LEO-Only Performance Comparison")
     print("=" * 70)
@@ -161,14 +164,12 @@ def main():
     for run_name, config_type in runs_created:
         print("  - %s (%s)" % (run_name, config_type))
     print()
-    print("To run all simulations:")
-    print("  python step_2_run.py")
+    print("To simulate:")
+    print("  - Full pipeline (exp 1–2 + 3 TCP + pings): from this dir, python step_2_run.py")
+    print("  - Or: evaluation_utils.run_ns3(\"runs/<name>\") after chdir to this directory")
+    print("  - Or one-off waf (from ns3-sat-sim/simulator):")
+    print("    ./waf --run \"main_satnet --run_dir=../../paper/ns3_experiments/multilayer/runs/<run_name>\"")
     print()
-    print("Or run individually:")
-    for run_name, config_type in runs_created:
-        print("  cd ../../../ns3-sat-sim/simulator")
-        print("  ./waf --run \"main_satnet --run_dir=../../paper/ns3_experiments/multilayer/runs/%s\"" % run_name)
-        print()
     print("After simulations, compare results:")
     print("  - RTT: Compare pingmesh results between multi-layer and LEO-only")
     print("  - Throughput: Compare TCP flow progress")
@@ -176,9 +177,9 @@ def main():
     print("  - Path length: Check routing paths (multi-layer should use MEO)")
     print()
     print("Expected results:")
-    print("  - Multi-layer should show lower latency for long-distance pairs")
-    print("  - Multi-layer should have lower LEO ISL utilization")
-    print("  - Multi-layer paths should include MEO satellites (node IDs 1156-1191)")
+    print("  - Multi-layer often lower latency / better goodput on long paths when MEO backhaul helps")
+    print("  - Multi-layer may show lower LEO ISL utilization when traffic uses MEO ISLs")
+    print("  - MEO node ID range: between LEO shell and GS (see evaluation_utils.get_meo_node_id_range())")
     print()
     
     return 0
