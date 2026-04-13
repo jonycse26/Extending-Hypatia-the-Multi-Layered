@@ -1,0 +1,6 @@
+pair,cwnd_tracking_error_leo_only,cwnd_tracking_error_multilayer,bdp_proxy_leo,bdp_proxy_ml
+(a) Mumbai to Lima,0.0,0.0,True,True
+(b) Lima to Karachi,0.0,0.0,True,True
+(c) Tokyo to Buenos-Aires,0.0,0.003800675675675676,True,True
+
+mean_over_pairs,0.0,0.001266891891891892,,
