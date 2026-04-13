@@ -1,0 +1,4 @@
+pair,label,run_name,max_rtt_ms,min_rtt_ms,rtt_variation_ms,rtt_variation_ratio,source_file
+Mumbai to Lima,multilayer,multilayer_1196_to_1221_tcp,713.321796,578.624657,134.697139,1.2327884533963094,/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/paper/ns3_experiments/multilayer/data/multilayer_1196_to_1221_tcp/computed_rtt_ms_ts.csv
+Lima to Karachi,multilayer,multilayer_1221_to_1203_tcp,721.822103,597.0,124.82210299999997,1.2090822495812394,/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/paper/ns3_experiments/multilayer/data/multilayer_1221_to_1203_tcp/computed_rtt_ms_ts.csv
+Tokyo to Buenos-Aires,multilayer,multilayer_1192_to_1204_tcp,765.304593,648.0,117.30459299999995,1.1810256064814815,/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/paper/ns3_experiments/multilayer/data/multilayer_1192_to_1204_tcp/computed_rtt_ms_ts.csv
