@@ -1,0 +1,10 @@
+panel,link_class,stat,leo_only_mean_over_pairs,multilayer_mean_over_pairs,leo_leo_load_reduction_pct_vs_leo_only
+peak_max,LEO_LEO,max_util,0.874175,0.0009936666666666668,99.88633092153553
+peak_max,LEO_MEO_touching,max_util,0.0,0.280893,
+peak_max,MEO_MEO,max_util,0.0,0.23373666666666668,
+loaded_mean_nz,LEO_LEO,mean_util_nonzero,0.29391207153312443,0.0015040000000000001,99.48828233146236
+loaded_mean_nz,LEO_MEO_touching,mean_util_nonzero,nan,0.04551434335839597,
+loaded_mean_nz,MEO_MEO,mean_util_nonzero,nan,0.04509617192982456,
+
+derived,LEO_LEO,leo_load_reduction_pct_peak_mean_over_pairs,99.88633092153553,,
+derived,LEO_LEO,leo_load_reduction_pct_mean_nz_mean_over_pairs,99.48828233146236,,
