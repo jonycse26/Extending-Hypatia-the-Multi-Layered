@@ -156,7 +156,6 @@ def main():
         "Figure D: RTT samples for t ≤ %d s; forwarding-state files ≈ %d; figure note: %d ms state updates."
         % (args.duration_s, n_fstate, args.time_step_ms)
     )
-    title_suffix = " — %d s sim, %d ms state updates" % (args.duration_s, args.time_step_ms)
     t_max = float(args.duration_s)
 
     rows = []
@@ -204,8 +203,7 @@ def main():
     ax1.set_ylim(0.0, 1.02)
     ax1.legend(loc="lower right")
 
-    fig.suptitle("Figure D — Max RTT / Geodesic RTT (Kuiper)" + title_suffix, fontsize=14)
-    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    fig.tight_layout()
 
     out_png = args.out_prefix + ".png"
     out_pdf = args.out_prefix + ".pdf"
