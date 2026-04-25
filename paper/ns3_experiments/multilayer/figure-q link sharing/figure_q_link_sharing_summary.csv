@@ -1,3 +1,3 @@
 mode,snapshot_index,time_ns,n_directed_flows,n_utilized_undirected_links,max_link_load,mean_link_load,p95_link_load,n_links_with_load_ge_2
 LEO-only,13,13000000000,9900,1959,826.0,45.494640122511484,182.0,1959
-Multilayer,13,13000000000,9900,3914,367.0,9.3717424629535,32.0,3655
+Multilayer,13,13000000000,9900,3881,1003.0,9.678433393455295,30.0,3671
