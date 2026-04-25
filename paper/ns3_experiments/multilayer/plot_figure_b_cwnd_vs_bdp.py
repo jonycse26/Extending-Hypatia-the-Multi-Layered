@@ -2,20 +2,20 @@
 """
 Figure B — TCP window vs path capacity (overlay LEO vs Multilayer)
 
-Per experiment-1 pair (three panels):
-  - LEO-only CWND / max(CWND)  — dashed
-  - Multilayer CWND / max(CWND) — solid
-  - LEO-only BDP+Q / max(BDP) — light dash-dot (reference)
-  - Multilayer BDP+Q / max(BDP) — light dotted (reference)
+Per experiment-1 pair (three panels), **combined** figure ``figure_b_cwnd_vs_bdp``:
+  - X-axis: Time (s)
+  - Y-axis: **# of packets** (raw ``cwnd_packets_ts`` and ``bdp_plus_q_packets_ts``)
+  - LEO-only CWND — dashed blue; Multilayer CWND — solid green
+  - LEO-only BDP+Q — dash-dot; Multilayer BDP+Q — dotted (reference)
 
 Tracking error (raw packets):
   mean(|cwnd − bdp|) with BDP linearly interpolated onto CWND times.
-  If bdp_plus_q_packets_ts is the evaluation_utils CWND mirror, this metric is ~0 and only the
-  normalized overlay (LEO vs multilayer) is meaningful until a true capacity trace is supplied.
+  If bdp_plus_q_packets_ts is the evaluation_utils CWND mirror, this metric is ~0 until a true
+  capacity trace is supplied.
 
 Outputs (default, under ``figure-b cwnd vs bdp/``):
 
-- ``figure_b_cwnd_vs_bdp`` — normalized LEO vs multilayer overlay (three panels).
+- ``figure_b_cwnd_vs_bdp`` — LEO vs multilayer overlay: time × packets (not normalized).
 - ``figure_b_cwnd_vs_bdp_leo_only`` — raw packets: CWND vs BDP+Q for LEO-only runs only.
 - ``figure_b_cwnd_vs_bdp_multilayer`` — raw packets for multilayer runs only.
 
@@ -69,6 +69,9 @@ def _clip_panel(panel, t_max_s):
     out = dict(panel)
     out["cwnd"] = (cx, cy)
     out["bdp"] = (bx, by)
+    if "progress" in panel:
+        pt, pb = panel["progress"]
+        out["progress"] = _clip_series_to_time_s(pt, pb, t_max_s)
     return out
 
 
@@ -168,8 +171,9 @@ def _tracking_error_mean_abs(cwnd_x, cwnd_y, bdp_x, bdp_y):
 def _plot_overlay_panels(triples, title, out_prefix, time_window_s):
     """
     triples: list of (panel_title, leo_panel, ml_panel, leo_te, ml_te)
+    Raw packet counts on y; time on x. Per-panel y-limits (like multi-panel paper figures).
     """
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5.2), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5.2), sharey=False)
     leo_errors = []
     ml_errors = []
 
@@ -186,40 +190,40 @@ def _plot_overlay_panels(triples, title, out_prefix, time_window_s):
         mcx, mcy = ml_p["cwnd"]
         mbx, mby = ml_p["bdp"]
 
-        lcy_n = _normalize01(lcy)
-        lby_n = _normalize01(lby)
-        mcy_n = _normalize01(mcy)
-        mby_n = _normalize01(mby)
-
-        ax.plot(lcx, lcy_n, lw=2.0, ls="--", color="#1f77b4", label="LEO-only CWND / max", zorder=3)
-        ax.plot(mcx, mcy_n, lw=2.2, ls="-", color="#2ca02c", label="Multilayer CWND / max", zorder=4)
+        ax.plot(lcx, lcy, lw=2.0, ls="--", color="#1f77b4", label="LEO-only CWND", zorder=3)
+        ax.plot(mcx, mcy, lw=2.2, ls="-", color="#2ca02c", label="Multilayer CWND", zorder=4)
         # BDP+Q reference: darker hues + thicker + high alpha so dash-dot / dotted read on grid/PDF.
         ax.plot(
             lbx,
-            lby_n,
+            lby,
             lw=2.2,
             ls="-.",
             color="#0d3d6b",
             alpha=0.92,
-            label="LEO-only BDP+Q / max",
+            label="LEO-only BDP+Q",
             zorder=2.5,
         )
         ax.plot(
             mbx,
-            mby_n,
+            mby,
             lw=2.2,
             ls=":",
             color="#1b5e20",
             alpha=0.92,
-            label="Multilayer BDP+Q / max",
+            label="Multilayer BDP+Q",
             zorder=2.5,
         )
+
+        ymax = 1.0
+        for ys in (lcy, lby, mcy, mby):
+            if ys:
+                ymax = max(ymax, max(ys))
+        ax.set_ylim(0.0, ymax * 1.05)
 
         ax.set_title(panel_title, fontsize=11)
         ax.set_xlabel("Time (s)")
         ax.set_xlim(0.0, float(time_window_s))
         ax.grid(True, alpha=0.3)
-        ax.set_ylim(-0.03, 1.08)
 
         # LEO-only callout: bottom-right. Multilayer: top-right (avoids overlap).
         ax.text(
@@ -247,25 +251,14 @@ def _plot_overlay_panels(triples, title, out_prefix, time_window_s):
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#2ca02c", alpha=0.85),
         )
 
-    axes[0].set_ylabel("Normalized (0–1)", fontsize=11)
+    axes[0].set_ylabel("# of packets", fontsize=11)
     handles, labels = axes[2].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", ncol=2, fontsize=8, frameon=True, bbox_to_anchor=(0.5, 1.02))
 
     mean_leo = float(np.nanmean(np.asarray(leo_errors, dtype=float))) if leo_errors else float("nan")
     mean_ml = float(np.nanmean(np.asarray(ml_errors, dtype=float))) if ml_errors else float("nan")
 
-    sub = title
-    if proxy_any:
-        sub += (
-            "\nNote: BDP+Q missing for some runs (cwnd fallback) — |cwnd−bdp| can be 0 by construction."
-        )
-    elif mean_leo == mean_leo and mean_ml == mean_ml and mean_leo < 1e-9 and mean_ml < 1e-9:
-        sub += (
-            "\nNote: bdp_plus_q_packets_ts mirrors CWND in evaluation_utils; "
-            "use an independent BDP+Q (BDP+queue) estimate for a non-degenerate tracking metric."
-        )
-    fig.suptitle(sub, fontsize=10, y=1.1)
-    fig.tight_layout(rect=[0, 0, 1, 0.82])
+    fig.tight_layout(rect=[0, 0, 1, 0.92])
     for ax in axes:
         ax.set_xlim(0.0, float(time_window_s))
 
@@ -355,7 +348,7 @@ def _plot_raw_cwnd_bdp_panels(pair_rows, figure_title, out_prefix, time_window_s
                 bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="#0d3d6b", alpha=0.85),
             )
 
-    axes[0].set_ylabel("Packets", fontsize=11)
+    axes[0].set_ylabel("# of packets", fontsize=11)
     handles, labels = axes[2].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", ncol=2, fontsize=8, frameon=True, bbox_to_anchor=(0.5, 1.02))
 
@@ -397,7 +390,7 @@ def main():
     parser.add_argument(
         "--out-prefix",
         default=os.path.join(FIGURE_DIR, "figure_b_cwnd_vs_bdp"),
-        help="Output prefix for the combined normalized figure.",
+        help="Output prefix for the combined overlay figure.",
     )
     parser.add_argument(
         "--combined-only",
@@ -440,7 +433,7 @@ def main():
 
     _plot_overlay_panels(
         triples,
-        "Figure B — Normalized CWND vs BDP+Q reference (LEO dashed vs Multilayer solid)" + title_suffix,
+        "Figure B — CWND vs BDP+Q (LEO dashed vs Multilayer solid)" + title_suffix,
         args.out_prefix,
         args.duration_s,
     )
