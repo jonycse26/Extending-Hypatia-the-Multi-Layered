@@ -1,23 +1,64 @@
 #!/usr/bin/env python3
 """
-Figure N — Abstract 3D view: LEO + MEO shells (Kuiper-630 + MEO from main_kuiper_630_meo)
+Figure N — LEO + MEO shells (Kuiper-630 + MEO from main_kuiper_630_meo), 3D schematic
 
-Renders Earth (wireframe sphere), all LEO and MEO satellites, and ISLs from the same
-multilayer topology as ``satgen.isls.generate_multilayer_isls`` (plus-grid within each
-shell + cross-layer links). Styling follows the usual paper figure: **light blue** thin LEO–LEO
-mesh, **deeper blue** LEO nodes, **green** MEO mesh and nodes, **purple** cross-layer links
-(slightly thicker than intra-layer), soft grey Earth.
+**Purpose (default: physical link drawing — Option B):** only draw intra-layer and
+cross-layer segments whose **straight-line** path stays strictly outside the Earth sphere
+(WGS72 radius). Segments that would geometrically pass through the globe are omitted so the
+figure is not misread as a “visibility map” of the abstract topology file.
 
-No generated ``gen_data`` folder is required: geometry is reconstructed from
-``paper/satellite_networks_state/main_kuiper_630_meo.py`` orbital parameters and the
-ISL generator (same as constellation build).
+**Alternative (``--link-mode abstract`` — Option A):** draw every ISL from
+``generate_multilayer_isls`` regardless of Earth occlusion; the caption should then state
+explicitly that the view is **topology-only**, not physical line-of-sight.
+
+Topology is always from ``satgen.isls.generate_multilayer_isls``: plus-grid per shell,
+cross-layer by **orbit/slot quantization** to a target MEO plus ``max_leo_per_meo`` (not
+nearest-MEO; many LEOs have no cross-layer edge when the cap is hit — see Figure R).
+
+**Depth cue (matplotlib 3D):** segments are split by projected midpoint depth (``proj3d``)
+and drawn before/after the Earth surface for a clearer front/back read (approximate in
+``mplot3d``).
+
+No ``gen_data`` folder is required: Walker-style ECI positions from
+``paper/satellite_networks_state/main_kuiper_630_meo.py`` and the same ISL generator as the
+constellation build.
+
+If you run plain ``python3`` on Ubuntu with a mixed pip/system Matplotlib, this script
+detects ``hypatia/.venv`` and re-invokes itself with that interpreter (``sys.prefix`` check,
+not symlink equality).
 """
 
 import argparse
 import math
 import os
+import subprocess
 import sys
 import tempfile
+
+
+def _maybe_reexec_with_hypatia_venv():
+    """
+    If ``hypatia/.venv`` exists, re-run this script with that interpreter.
+
+    Mixed installs (Debian ``/usr/lib/python3/dist-packages/mpl_toolkits`` + a pip
+    ``~/.local`` Matplotlib) break ``Axes3D`` (``ImportError: cannot import name 'docstring'``).
+    The project venv keeps Matplotlib, NumPy, and Astropy aligned.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    repo = os.path.normpath(os.path.join(here, "../../.."))
+    vpy = os.path.join(repo, ".venv", "bin", "python3")
+    if not os.path.isfile(vpy):
+        return
+    # ``.venv/bin/python3`` is often a symlink to ``/usr/bin/python3``; ``samefile`` is not enough.
+    # What matters is whether the venv's ``site-packages`` is active (``sys.prefix``).
+    venv_home = os.path.abspath(os.path.join(repo, ".venv"))
+    if os.path.abspath(sys.prefix) == venv_home:
+        return
+    rc = subprocess.call([vpy, os.path.abspath(__file__)] + sys.argv[1:])
+    raise SystemExit(rc)
+
+
+_maybe_reexec_with_hypatia_venv()
 
 import matplotlib
 
@@ -25,8 +66,21 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 — registers 3d projection
-from mpl_toolkits.mplot3d.art3d import Line3DCollection
+try:
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 — registers 3d projection
+    from mpl_toolkits.mplot3d import proj3d
+    from mpl_toolkits.mplot3d.art3d import Line3DCollection
+except ImportError as exc:
+    _here = os.path.dirname(os.path.abspath(__file__))
+    _repo = os.path.normpath(os.path.join(_here, "../../.."))
+    _vpy = os.path.join(_repo, ".venv", "bin", "python3")
+    sys.stderr.write(
+        "Failed to import mpl_toolkits.mplot3d (%r).\n"
+        "This is usually a mixed Matplotlib install (system mpl_toolkits + pip user matplotlib).\n"
+        "Fix: run with the Hypatia venv if present:\n  %s %s ...\n"
+        "Or: PYTHONNOUSERSITE=1 python3 ...\n" % (exc, _vpy, os.path.abspath(__file__))
+    )
+    raise
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FIGURE_DIR = os.path.join(SCRIPT_DIR, "figure-n multilayer abstract")
@@ -35,6 +89,32 @@ REPO_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, "../../.."))
 SATGENPY = os.path.join(REPO_ROOT, "satgenpy")
 
 EARTH_RADIUS_M = 6378135.0  # WGS72, matches main_helper_multilayer
+
+
+def earth_los_clear(p0, p1, earth_radius_m=EARTH_RADIUS_M):
+    """
+    True if the closed segment p0–p1 lies strictly outside the Earth ball (geometric LOS).
+
+    Uses the closest point on the segment to the origin; if that distance is greater than
+    ``earth_radius_m``, the chord does not intersect the solid Earth. Endpoints are assumed
+    outside the Earth (orbit altitudes).
+    """
+    a = np.asarray(p0, dtype=float).reshape(3)
+    b = np.asarray(p1, dtype=float).reshape(3)
+    u = b - a
+    un = float(np.dot(u, u))
+    if un < 1e-18:
+        return float(np.dot(a, a)) > earth_radius_m**2
+    t = float(-np.dot(a, u) / un)
+    t = max(0.0, min(1.0, t))
+    c = a + t * u
+    # Strict inequality: grazing tangency treated as not “clear” for a conservative plot.
+    return float(np.dot(c, c)) > earth_radius_m**2 * (1.0 + 1e-12)
+
+
+def _filter_segments_earth_los(segments, earth_radius_m=EARTH_RADIUS_M):
+    """Keep only segments with geometric line-of-sight clear of the Earth sphere."""
+    return [s for s in segments if earth_los_clear(s[0], s[1], earth_radius_m)]
 
 
 def _walker_shell_xyz(num_orbit, num_sats_per_orbit, altitude_m, inclination_deg, phase_diff):
@@ -126,6 +206,26 @@ def _load_constellation_and_isls(max_leo_per_meo, isl_shift):
     return x, y, z, pairs, leo_n, k
 
 
+def _segment_midpoint_depth(ax, seg):
+    """Projected depth of segment midpoint (for draw order in mplot3d)."""
+    p0 = np.asarray(seg[0], dtype=float)
+    p1 = np.asarray(seg[1], dtype=float)
+    m = 0.5 * (p0 + p1)
+    _xs, _ys, dz = proj3d.proj_transform(m[0], m[1], m[2], ax.get_proj())
+    return float(dz)
+
+
+def _split_segments_depth(ax, segments):
+    """Split into far (draw before Earth) vs near (draw after Earth) by median depth."""
+    if not segments:
+        return [], []
+    depths = [_segment_midpoint_depth(ax, s) for s in segments]
+    med = float(np.median(depths))
+    back = [s for s, d in zip(segments, depths) if d <= med]
+    front = [s for s, d in zip(segments, depths) if d > med]
+    return back, front
+
+
 def _plot_figure(
     x,
     y,
@@ -150,22 +250,10 @@ def _plot_figure(
     alpha_cross,
     size_leo_pt,
     size_meo_pt,
+    filter_earth_los,
 ):
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111, projection="3d")
-
-    sx, sy, sz = _sphere_mesh(EARTH_RADIUS_M * 0.999, n=48)
-    ax.plot_surface(
-        sx,
-        sy,
-        sz,
-        color="#e8e8ea",
-        edgecolor="#c8c8cc",
-        linewidth=0.12,
-        alpha=earth_alpha,
-        shade=True,
-        antialiased=True,
-    )
 
     n_sat = len(x)
 
@@ -190,6 +278,18 @@ def _plot_figure(
         else:
             seg_cross.append((pa, pb))
 
+    if filter_earth_los:
+        seg_leo = _filter_segments_earth_los(seg_leo, EARTH_RADIUS_M)
+        seg_meo = _filter_segments_earth_los(seg_meo, EARTH_RADIUS_M)
+        seg_cross = _filter_segments_earth_los(seg_cross, EARTH_RADIUS_M)
+
+    ax.set_box_aspect((1, 1, 1))
+    lim = float(np.max(np.sqrt(x * x + y * y + z * z)) * 1.12)
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+    ax.set_zlim(-lim, lim)
+    ax.view_init(elev=elev, azim=azim)
+
     def _add_lc(segments, color, lw, alpha):
         if not segments:
             return
@@ -197,8 +297,32 @@ def _plot_figure(
         lc = Line3DCollection(arr, colors=color, linewidths=lw, alpha=alpha)
         ax.add_collection3d(lc)
 
-    _add_lc(seg_leo, color_leo_isl, line_width_leo, alpha_leo_isl)
-    _add_lc(seg_meo, color_meo, line_width_meo, alpha_meo_isl)
+    leo_b, leo_f = _split_segments_depth(ax, seg_leo)
+    meo_b, meo_f = _split_segments_depth(ax, seg_meo)
+    cross_b, cross_f = _split_segments_depth(ax, seg_cross)
+
+    alpha_back_scale = 0.5
+    _add_lc(leo_b, color_leo_isl, line_width_leo, alpha_leo_isl * alpha_back_scale)
+    _add_lc(meo_b, color_meo, line_width_meo, alpha_meo_isl * alpha_back_scale)
+    _add_lc(cross_b, color_cross, line_width_cross, alpha_cross * 0.55)
+
+    sx, sy, sz = _sphere_mesh(EARTH_RADIUS_M * 0.999, n=48)
+    ax.plot_surface(
+        sx,
+        sy,
+        sz,
+        color="#e8e8ea",
+        edgecolor="#c8c8cc",
+        linewidth=0.12,
+        alpha=earth_alpha,
+        shade=True,
+        antialiased=True,
+        zorder=1,
+    )
+
+    _add_lc(leo_f, color_leo_isl, line_width_leo, alpha_leo_isl)
+    _add_lc(meo_f, color_meo, line_width_meo, alpha_meo_isl)
+    _add_lc(cross_f, color_cross, line_width_cross, alpha_cross)
 
     ax.scatter(
         x[:leo_n],
@@ -223,17 +347,9 @@ def _plot_figure(
         zorder=5,
     )
 
-    # Cross-layer: draw last so purple links read above the LEO mesh (reference-style).
-    _add_lc(seg_cross, color_cross, line_width_cross, alpha_cross)
-
-    ax.set_box_aspect((1, 1, 1))
-    lim = float(np.max(np.sqrt(x * x + y * y + z * z)) * 1.12)
-    ax.set_xlim(-lim, lim)
-    ax.set_ylim(-lim, lim)
-    ax.set_zlim(-lim, lim)
-    ax.view_init(elev=elev, azim=azim)
     ax.set_axis_off()
-    ax.set_title(title, fontsize=12, pad=12)
+    if title:
+        ax.set_title(title, fontsize=12, pad=12)
     legend_handles = [
         Line2D(
             [0],
@@ -255,7 +371,17 @@ def _plot_figure(
             markeredgecolor="#1a5c1a",
             label="MEO",
         ),
-        Line2D([0], [0], color=color_cross, linewidth=2.2, label="Cross-layer ISL"),
+        Line2D(
+            [0],
+            [0],
+            color=color_cross,
+            linewidth=2.2,
+            label=(
+                "Cross-layer ISL (Earth-cleared only)"
+                if filter_earth_los
+                else "Cross-layer ISL (topology)"
+            ),
+        ),
     ]
     ax.legend(handles=legend_handles, loc="upper left", fontsize=9, framealpha=0.9)
 
@@ -287,6 +413,13 @@ def main():
         help="Cross-layer cap passed to generate_multilayer_isls (default 5).",
     )
     p.add_argument("--isl-shift", type=int, default=0, help="ISL shift between orbits (LEO/MEO grid).")
+    p.add_argument(
+        "--link-mode",
+        choices=("physical", "abstract"),
+        default="physical",
+        help="physical: omit ISLs whose straight segment intersects the Earth sphere (default). "
+        "abstract: draw full topology regardless of Earth occlusion (label as non-physical).",
+    )
     p.add_argument(
         "--color-leo",
         default="#1565a8",
@@ -337,17 +470,7 @@ def main():
         return 1
 
     x, y, z, pairs, leo_n, kmod = _load_constellation_and_isls(args.max_leo_per_meo, args.isl_shift)
-    meo_n = kmod.MEO_NUM_ORBS * kmod.MEO_NUM_SATS_PER_ORB
-    title = (
-        "Figure N — LEO (%.0f km) vs MEO (%.0f km) abstract view\n"
-        "%d LEO + %d MEO satellites; ISLs from multilayer generator"
-        % (
-            kmod.LEO_ALTITUDE_M / 1000.0,
-            kmod.MEO_ALTITUDE_M / 1000.0,
-            leo_n,
-            meo_n,
-        )
-    )
+    title = ""
     _plot_figure(
         x,
         y,
@@ -372,6 +495,7 @@ def main():
         args.alpha_cross,
         args.size_leo,
         args.size_meo,
+        args.link_mode == "physical",
     )
     return 0
 
