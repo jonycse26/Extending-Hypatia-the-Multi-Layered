@@ -20,8 +20,11 @@ import csv
 import os
 import re
 import sys
+import warnings
 
 import matplotlib
+# Figure A is 2D-only; silence irrelevant 3D projection warning from mixed matplotlib installs.
+warnings.filterwarnings("ignore", message="Unable to import Axes3D.*", category=UserWarning)
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -222,7 +225,7 @@ def _load_panel_series(tcp_run_name, pings_run_name):
     }
 
 
-def _plot_three_panels(panels, figure_title, out_png, out_pdf, time_window_s):
+def _plot_three_panels(panels, out_png, out_pdf, time_window_s):
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.8), sharey=True)
     data_t_max = 0.0
     for i, (title, panel) in enumerate(panels):
@@ -269,8 +272,7 @@ def _plot_three_panels(panels, figure_title, out_png, out_pdf, time_window_s):
     axes[0].set_ylabel("RTT (ms)")
     axes[2].legend(loc="upper right", fontsize=8)
 
-    fig.suptitle(figure_title, fontsize=14)
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.tight_layout()
     # Keep full [0, duration_s] window after layout (avoids autoscale quirks).
     for ax in axes:
         ax.set_xlim(0.0, float(time_window_s))
@@ -326,8 +328,6 @@ def main():
         % (args.duration_s, n_fstate)
     )
 
-    title_suffix = " — %d s sim, %d ms state updates" % (args.duration_s, args.time_step_ms)
-
     try:
         leo_panels = []
         for i, (from_id, to_id, desc) in enumerate(experiment1_pairs_leo):
@@ -350,14 +350,12 @@ def main():
 
     _plot_three_panels(
         leo_panels,
-        "Figure A — RTT behavior (LEO-only)" + title_suffix,
         args.leo_out_prefix + ".png",
         args.leo_out_prefix + ".pdf",
         args.duration_s,
     )
     _plot_three_panels(
         ml_panels,
-        "Figure A — RTT behavior (Multilayer)" + title_suffix,
         args.ml_out_prefix + ".png",
         args.ml_out_prefix + ".pdf",
         args.duration_s,
