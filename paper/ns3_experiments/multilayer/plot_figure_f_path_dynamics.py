@@ -152,7 +152,7 @@ def _read_external_constellation(csv_path, constellation_name):
     return out
 
 
-def _plot_mode(mode, datasets, out_prefix, title, title_suffix):
+def _plot_mode(mode, datasets, out_prefix):
     """
     datasets:
       {
@@ -190,8 +190,7 @@ def _plot_mode(mode, datasets, out_prefix, title, title_suffix):
         if i == 2:
             ax.legend(loc="lower right")
 
-    fig.suptitle("%s%s (%s)" % (title, title_suffix, mode.replace("_", "-")), fontsize=14)
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.tight_layout()
 
     out_png = out_prefix + ".png"
     out_pdf = out_prefix + ".pdf"
@@ -253,8 +252,6 @@ def main():
         "(regenerate multilayer_all_experiments_metrics.csv from matching runs)."
         % (args.duration_s, args.time_step_ms, n_fstate)
     )
-    title_suffix = " — %d s sim, %d ms state updates" % (args.duration_s, args.time_step_ms)
-
     kuiper = _read_kuiper_metrics(args.kuiper_csv)
     telesat = _read_external_constellation(args.telesat_csv, "Telesat")
     starlink = _read_external_constellation(args.starlink_csv, "Starlink")
@@ -274,15 +271,11 @@ def main():
         "leo_only",
         leo_datasets,
         args.leo_out_prefix,
-        "Figure F — Path structure changes across pairs",
-        title_suffix,
     )
     _plot_mode(
         "multilayer",
         ml_datasets,
         args.ml_out_prefix,
-        "Figure F — Path structure changes across pairs",
-        title_suffix,
     )
     return 0
 
