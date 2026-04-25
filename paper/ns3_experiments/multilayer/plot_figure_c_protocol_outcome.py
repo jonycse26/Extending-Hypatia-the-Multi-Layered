@@ -156,8 +156,7 @@ def _plot_three_panels(panels, fig_title, out_prefix, time_window_s):
 
     # Keep legend only in the last panel to avoid clutter.
     axes[2].legend(legend_handles, legend_labels, loc="upper left", fontsize=8)
-    fig.suptitle(fig_title, fontsize=14)
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.tight_layout()
     for ax in axes:
         ax.set_xlim(0.0, float(time_window_s))
 
@@ -196,8 +195,7 @@ def _plot_two_panel_leo_vs_ml(leo_panel, ml_panel, pair_description, fig_title, 
     labels = [h.get_label() for h in h0]
     axes[0].legend(h0, labels, loc="upper left", fontsize=8)
 
-    fig.suptitle(fig_title + "\n" + pair_description, fontsize=13)
-    fig.tight_layout(rect=[0, 0, 1, 0.92])
+    fig.tight_layout()
     for ax in axes:
         ax.set_xlim(0.0, float(time_window_s))
 
@@ -267,8 +265,6 @@ def main():
         "Figure C: x-axis [0, %d] s; forwarding-state files ≈ %d (duration_s×1000/time_step_ms + 1)"
         % (args.duration_s, n_fstate)
     )
-    title_suffix = " — %d s sim, %d ms state updates" % (args.duration_s, args.time_step_ms)
-
     if args.combined_pair_index < 0 or args.combined_pair_index >= len(experiment1_pairs_leo):
         print(
             "ERROR: --combined-pair-index must be in [0, %d)"
@@ -298,13 +294,13 @@ def main():
 
     _plot_three_panels(
         leo_panels,
-        "Figure C — Protocol outcome over time (LEO-only)" + title_suffix,
+        "Figure C — Protocol outcome over time (LEO-only)",
         args.leo_out_prefix,
         args.duration_s,
     )
     _plot_three_panels(
         ml_panels,
-        "Figure C — Protocol outcome over time (Multilayer)" + title_suffix,
+        "Figure C — Protocol outcome over time (Multilayer)",
         args.ml_out_prefix,
         args.duration_s,
     )
@@ -316,7 +312,7 @@ def main():
             leo_panels_raw[j],
             ml_panels_raw[j],
             _pair_desc,
-            "Figure C — Protocol outcome over time" + title_suffix,
+            "Figure C — Protocol outcome over time",
             args.combined_out_prefix,
             args.duration_s,
         )
