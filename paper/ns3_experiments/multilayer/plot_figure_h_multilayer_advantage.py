@@ -112,6 +112,27 @@ def _panel(ax, pairs, key, title, lower_better=True):
     ax.text(0.01, 0.96, note, transform=ax.transAxes, fontsize=8, va="top")
 
 
+def _save_two_panel_figure(pairs, panel_specs, out_prefix):
+    """
+    panel_specs: list of tuples (key, title, lower_better), length 2
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    for i, (key, title, lower_better) in enumerate(panel_specs):
+        _panel(axes[i], pairs, key, title, lower_better=lower_better)
+    axes[0].legend(loc="upper right")
+    fig.tight_layout()
+
+    out_png = out_prefix + ".png"
+    out_pdf = out_prefix + ".pdf"
+    os.makedirs(os.path.dirname(os.path.abspath(out_png)), exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.abspath(out_pdf)), exist_ok=True)
+    fig.savefig(out_png, dpi=220)
+    fig.savefig(out_pdf)
+    plt.close(fig)
+    print("Wrote:", out_png)
+    print("Wrote:", out_pdf)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Create Figure H multilayer-vs-LEO scorecard.")
     parser.add_argument("--metrics-csv", default=DEFAULT_METRICS, help="Input metrics CSV.")
@@ -139,8 +160,6 @@ def main():
         "Figure H: annotated for %d s sim, %d ms state updates; forwarding-state files ≈ %d."
         % (args.duration_s, args.time_step_ms, n_fstate)
     )
-    title_suffix = " — %d s sim, %d ms state updates" % (args.duration_s, args.time_step_ms)
-
     if not os.path.isfile(args.metrics_csv):
         print("ERROR: missing metrics CSV:", args.metrics_csv)
         return 1
@@ -151,28 +170,22 @@ def main():
         print("ERROR: no experiment-1 pair rows found in", args.metrics_csv)
         return 1
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 9))
-    _panel(axes[0, 0], pairs, "avg_hop_count", "(a) Avg hop count", lower_better=True)
-    _panel(axes[0, 1], pairs, "bottleneck_utilization", "(b) Bottleneck utilization", lower_better=True)
-    _panel(axes[1, 0], pairs, "rtt_stretch", "(c) RTT stretch (max/geodesic)", lower_better=True)
-    _panel(axes[1, 1], pairs, "path_stability_ratio", "(d) Path stability ratio", lower_better=False)
-    axes[0, 0].legend(loc="upper right")
-
-    fig.suptitle(
-        "Figure H — Multilayer vs LEO-only (Kuiper pairwise scorecard)" + title_suffix,
-        fontsize=14,
+    _save_two_panel_figure(
+        pairs,
+        [
+            ("avg_hop_count", "(a) Avg hop count", True),
+            ("bottleneck_utilization", "(b) Bottleneck utilization", True),
+        ],
+        args.out_prefix + "_ab",
     )
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
-
-    out_png = args.out_prefix + ".png"
-    out_pdf = args.out_prefix + ".pdf"
-    os.makedirs(os.path.dirname(os.path.abspath(out_png)), exist_ok=True)
-    os.makedirs(os.path.dirname(os.path.abspath(out_pdf)), exist_ok=True)
-    fig.savefig(out_png, dpi=220)
-    fig.savefig(out_pdf)
-    plt.close(fig)
-    print("Wrote:", out_png)
-    print("Wrote:", out_pdf)
+    _save_two_panel_figure(
+        pairs,
+        [
+            ("rtt_stretch", "(c) RTT stretch (max/geodesic)", True),
+            ("path_stability_ratio", "(d) Path stability ratio", False),
+        ],
+        args.out_prefix + "_cd",
+    )
     return 0
 
 
