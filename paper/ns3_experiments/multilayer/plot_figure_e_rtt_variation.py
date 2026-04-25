@@ -130,7 +130,7 @@ def _write_rows(rows, csv_path):
         w.writerows(rows)
 
 
-def _plot_three_panels(values_max, values_delta, values_ratio, title, out_prefix, title_suffix):
+def _plot_three_panels(values_max, values_delta, values_ratio, out_prefix):
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.8), sharey=True)
     specs = [
         ("(a) Max RTT", values_max, "Max. RTT (ms)"),
@@ -152,8 +152,7 @@ def _plot_three_panels(values_max, values_delta, values_ratio, title, out_prefix
         if i == 2 and x:
             ax.legend(loc="lower right")
 
-    fig.suptitle(title + title_suffix, fontsize=14)
-    fig.tight_layout(rect=[0, 0, 1, 0.93])
+    fig.tight_layout()
 
     out_png = out_prefix + ".png"
     out_pdf = out_prefix + ".pdf"
@@ -207,7 +206,6 @@ def main():
         "Figure E: RTT samples for t ≤ %d s; forwarding-state files ≈ %d; %d ms state updates."
         % (args.duration_s, n_fstate, args.time_step_ms)
     )
-    title_suffix = " — %d s sim, %d ms state updates" % (args.duration_s, args.time_step_ms)
     t_max = float(args.duration_s)
 
     leo_rows = []
@@ -229,9 +227,7 @@ def main():
         leo_max,
         leo_delta,
         leo_ratio,
-        "Figure E — RTT variation across pairs (LEO-only)",
         args.leo_out_prefix,
-        title_suffix,
     )
 
     ml_max = [r["max_rtt_ms"] for r in ml_rows]
@@ -241,9 +237,7 @@ def main():
         ml_max,
         ml_delta,
         ml_ratio,
-        "Figure E — RTT variation across pairs (Multilayer)",
         args.ml_out_prefix,
-        title_suffix,
     )
 
     print("Wrote:", args.leo_csv)
