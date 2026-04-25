@@ -285,13 +285,7 @@ def main():
         fontsize=10,
     )
     ax.set_ylabel("ECDF (over utilized links)", fontsize=11)
-    ax.set_title(
-        "Figure Q — Link sharing / path overlap\n"
-        "ECDF of per-link flow counts at one forwarding snapshot"
-        + " — %d s sim, %d ms updates"
-        % (args.duration_s, args.time_step_ms),
-        fontsize=11,
-    )
+    # No top title: keep only the figure content.
     ax.grid(True, linestyle=":", alpha=0.65)
     ax.legend(loc="lower right", fontsize=9)
     hi = 1.0
@@ -300,12 +294,7 @@ def main():
             hi = max(hi, float(np.max(arr)))
     ax.set_xlim(0.5, max(hi * 1.08, 2.0))
     ax.set_ylim(0.0, 1.05)
-    foot = (
-        "Snapshot: LEO idx %d (t=%d ns) · ML idx %d (t=%d ns) · Flows: %d / %d directed pairs"
-        % (i_leo, t_ns_leo, i_ml, t_ns_ml, len(pairs_leo), len(pairs_ml))
-    )
-    fig.text(0.5, 0.02, foot, ha="center", fontsize=7.5, color="0.35")
-    fig.tight_layout(rect=[0, 0.05, 1, 1])
+    fig.tight_layout()
 
     out_png = args.out_prefix + ".png"
     out_pdf = args.out_prefix + ".pdf"
