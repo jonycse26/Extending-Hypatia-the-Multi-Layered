@@ -190,8 +190,6 @@ def main():
         "Figure J: annotated for %d s sim, %d ms state updates; forwarding-state files ≈ %d."
         % (args.duration_s, args.time_step_ms, n_fstate)
     )
-    title_suffix = " — %d s sim, %d ms state updates" % (args.duration_s, args.time_step_ms)
-
     if not os.path.isfile(args.metrics_csv):
         print("ERROR: missing metrics CSV:", args.metrics_csv)
         return 1
@@ -209,10 +207,7 @@ def main():
     red_peak = _leo_reduction_pct(u_lo_peak, u_ml_peak)
     red_mean = _leo_reduction_pct(u_lo_mean, u_ml_mean)
 
-    # Tall canvas: charts on top, plain-language block below (no overlap).
-    fig = plt.figure(figsize=(14.0, 10.0))
-    ax0 = fig.add_axes([0.08, 0.56, 0.38, 0.30])
-    ax1 = fig.add_axes([0.54, 0.56, 0.38, 0.30])
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(14.0, 5.2))
 
     _panel(
         ax0,
@@ -239,52 +234,7 @@ def main():
         bbox_to_anchor=(0.5, 0.91),
         fontsize=11,
     )
-
-    fig.suptitle(
-        "Figure J — Traffic moves off the LEO mesh onto MEO (Kuiper, 3 flows averaged)"
-        + title_suffix,
-        fontsize=13,
-        fontweight="bold",
-        y=0.96,
-    )
-
-    # One consolidated summary box (plain language)
-    peak_line = "Peak on LEO mesh: LEO-only ≈ %.2f, multilayer ≈ %.2f." % (u_lo_peak, u_ml_peak)
-    if red_peak == red_peak:
-        peak_line += "  Relative drop: ≈ %.0f%%." % red_peak
-    mean_line = "Typical busy mesh link: LEO-only ≈ %.2f, multilayer ≈ %.2f." % (u_lo_mean, u_ml_mean)
-    if red_mean == red_mean:
-        mean_line += "  Relative drop: ≈ %.0f%%." % red_mean
-
-    key_box = (
-        "KEY RESULT\n"
-        + peak_line
-        + "\n"
-        + mean_line
-        + "\n\n"
-        "WHY THE GREEN LEFT BARS ARE SMALL: Multilayer routing uses MEO, so the heaviest LEO–LEO hop is much less loaded — "
-        "LEO satellites are still there; congestion on the mesh is what eased.\n\n"
-        "WHY THE GREEN MIDDLE/RIGHT BARS EXIST: That is traffic on links involving MEO — the intended offload. "
-        "Good for spreading load, but MEO can become congested if demand grows.\n\n"
-        "SCOPE: Numbers come from isl_utilization.csv (whole network), not from tracing one flow end-to-end."
-    )
-    fig.text(
-        0.06,
-        0.51,
-        key_box,
-        fontsize=9,
-        va="top",
-        ha="left",
-        linespacing=1.35,
-        family="sans-serif",
-        bbox=dict(boxstyle="round,pad=0.55", facecolor="#f5f5f5", edgecolor="#888888", linewidth=0.8),
-    )
-
-    foot = (
-        "* “Touches MEO” = any logged ISL with a MEO satellite on one end (includes LEO–MEO, MEO–ground feeders, etc.). "
-        "“Relative drop” on the mesh group: (LEO-only bar − Multilayer bar) / LEO-only bar, after averaging the three runs."
-    )
-    fig.text(0.06, 0.055, foot, fontsize=8, va="bottom", ha="left", color="#444444")
+    fig.tight_layout(rect=[0, 0, 1, 0.90])
 
     out_png = args.out_prefix + ".png"
     out_pdf = args.out_prefix + ".pdf"
