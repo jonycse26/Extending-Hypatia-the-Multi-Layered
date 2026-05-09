@@ -1,10 +1,10 @@
 Waf: Entering directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Waf: Leaving directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Build commands will be stored in build/debug_all/compile_commands.json
-'build' finished successfully (5.164s)
+'build' finished successfully (3.264s)
 BASIC SIMULATION START
-  > Date... Monday March  9, 2026
-  > Time... 22:46:19
+  > Date... Saturday April 25, 2026
+  > Time... 20:12:51
 
 CONFIGURE RUN DIRECTORY
   > Run directory: ../../paper/ns3_experiments/multilayer/runs/multilayer_1192_to_1204_tcp
@@ -22,8 +22,8 @@ isl_data_rate_megabit_per_s               10.0
 isl_max_queue_size_pkts                   100
 isl_utilization_tracking_interval_ns      1000000000
 satellite_network_dir                     ../../../../satellite_networks_state/gen_data/kuiper_630_meo_isls_plus_grid_with_cross_layer_ground_stations_top_100_algorithm_free_one_multi_layer
-satellite_network_routes_dir              ../../../../satellite_networks_state/gen_data/kuiper_630_meo_isls_plus_grid_with_cross_layer_ground_stations_top_100_algorithm_free_one_multi_layer/dynamic_state_1000ms_for_5s
-simulation_end_time_ns                    5000000000
+satellite_network_routes_dir              ../../../../satellite_networks_state/gen_data/kuiper_630_meo_isls_plus_grid_with_cross_layer_ground_stations_top_100_algorithm_free_one_multi_layer/dynamic_state_1000ms_for_25s
+simulation_end_time_ns                    25000000000
 simulation_seed                           123456789
 tcp_flow_enable_logging_for_tcp_flow_ids  set(0)
 tcp_flow_schedule_filename                schedule.csv
@@ -34,7 +34,7 @@ CONFIGURE SIMULATION
   > System id........ 0
   > No. of systems... 1
   > Seed............. 123456789
-  > Duration......... 5.00 s (5000000000 ns)
+  > Duration......... 25.00 s (25000000000 ns)
 
 TCP OPTIMIZATION BASIC
   > Clock granularity.......... 1 ns
@@ -66,16 +66,16 @@ SATELLITE NETWORK
     >> Assigning IP addresses...
        (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)
        Progress (as there are more entries, it becomes slower):
-       - 10.06% (t = 0.21 s, update took 0.21 s)
-       - 20.12% (t = 0.45 s, update took 0.24 s)
-       - 30.19% (t = 0.71 s, update took 0.26 s)
-       - 40.25% (t = 0.97 s, update took 0.27 s)
-       - 50.31% (t = 1.27 s, update took 0.29 s)
-       - 60.37% (t = 1.52 s, update took 0.25 s)
-       - 70.43% (t = 1.77 s, update took 0.25 s)
-       - 80.50% (t = 2.03 s, update took 0.27 s)
-       - 90.56% (t = 2.28 s, update took 0.24 s)
-       - 100.00% (t = 2.52 s, update took 0.25 s)
+       - 10.06% (t = 0.18 s, update took 0.18 s)
+       - 20.12% (t = 0.36 s, update took 0.18 s)
+       - 30.19% (t = 0.55 s, update took 0.19 s)
+       - 40.25% (t = 0.73 s, update took 0.18 s)
+       - 50.31% (t = 0.92 s, update took 0.19 s)
+       - 60.37% (t = 1.13 s, update took 0.22 s)
+       - 70.43% (t = 1.34 s, update took 0.20 s)
+       - 80.50% (t = 1.54 s, update took 0.20 s)
+       - 90.56% (t = 1.75 s, update took 0.21 s)
+       - 100.00% (t = 1.95 s, update took 0.20 s)
     >> Finished assigning IPs
     >> Removing traffic control layers (qdiscs)...
     >> Finished removing GSL queueing disciplines
@@ -106,9 +106,13 @@ PINGMESH SCHEDULER
   > Not enabled explicitly, so disabled
 
 SIMULATION
-Running the simulation for 5.00 simulation seconds...
+Running the simulation for 25.00 simulation seconds...
+35.06% - Simulation Time = 8.77 s ::: Wallclock Time = 13.60 s
+Estimated wallclock time remaining: 25 seconds
+66.00% - Simulation Time = 16.50 s ::: Wallclock Time = 23.77 s
+Estimated wallclock time remaining: 12 seconds
 Finished simulation.
-Simulation of 5.0 seconds took in wallclock time 8.3 seconds.
+Simulation of 25.0 seconds took in wallclock time 31.9 seconds.
 
 STORE TCP FLOW RESULTS
   > Opening TCP flow log files:
@@ -136,20 +140,20 @@ TIMING RESULTS
 [    0.0 -     0.0] (0.0 s) :: Configure run and logs directory
 [    0.0 -     0.0] (0.0 s) :: Configure simulator
 [    0.0 -     0.0] (0.0 s) :: Setup TCP parameters
-[    0.0 -    18.5] (18.5 s) :: Create initial single forwarding state
-[   18.5 -    78.3] (59.8 s) :: Setup routing arbiter on each node
-[   78.3 -    81.2] (2.9 s) :: Create initial single forwarding state
-[   81.2 -    81.3] (0.1 s) :: Set first GSL interface bandwidth
-[   81.3 -    81.3] (0.0 s) :: Read flow schedule
-[   81.3 -    81.3] (0.0 s) :: Remove previous flow log files
-[   81.3 -    81.3] (0.1 s) :: Setup TCP flow sinks
-[   81.3 -    81.3] (0.0 s) :: Setup traffic TCP flow starter
-[   81.3 -    81.3] (0.0 s) :: Whatever is between previous timestamp and the simulation run
-[   81.3 -    89.6] (8.3 s) :: Run simulation
-[   89.6 -    89.6] (0.0 s) :: Write TCP flow log files
-[   89.6 -    90.0] (0.4 s) :: Destroy simulator
+[    0.0 -    14.3] (14.3 s) :: Create initial single forwarding state
+[   14.3 -    62.8] (48.5 s) :: Setup routing arbiter on each node
+[   62.8 -    65.3] (2.5 s) :: Create initial single forwarding state
+[   65.3 -    65.5] (0.1 s) :: Set first GSL interface bandwidth
+[   65.5 -    65.5] (0.0 s) :: Read flow schedule
+[   65.5 -    65.5] (0.0 s) :: Remove previous flow log files
+[   65.5 -    65.6] (0.1 s) :: Setup TCP flow sinks
+[   65.6 -    65.6] (0.0 s) :: Setup traffic TCP flow starter
+[   65.6 -    65.6] (0.0 s) :: Whatever is between previous timestamp and the simulation run
+[   65.6 -    97.5] (31.9 s) :: Run simulation
+[   97.5 -    97.5] (0.0 s) :: Write TCP flow log files
+[   97.5 -    98.0] (0.6 s) :: Destroy simulator
 
 BASIC SIMULATION END
-  > Date... Monday March  9, 2026
-  > Time... 22:47:49
+  > Date... Saturday April 25, 2026
+  > Time... 20:14:29
 

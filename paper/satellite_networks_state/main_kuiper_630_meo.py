@@ -13,7 +13,6 @@ BASE_NAME = "kuiper_630_meo"
 NICE_NAME = "Kuiper-630-MEO"
 
 # KUIPER 630 LEO SHELL
-# Circular orbits are zero, but pyephem does not permit 0, so lowest possible value
 LEO_ECCENTRICITY = 0.0000001  
 LEO_ARG_OF_PERIGEE_DEGREE = 0.0
 LEO_PHASE_DIFF = True

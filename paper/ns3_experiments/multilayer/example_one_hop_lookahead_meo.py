@@ -179,7 +179,7 @@ def run_real_example(time_s=2.0):
     dist_np = np.where(np.isfinite(dist_np), dist_np, np.inf)
 
     # Load fstate for this time step
-    dynamic_dir = os.path.join(CONSTELLATION_DIR, "dynamic_state_1000ms_for_5s")
+    dynamic_dir = os.path.join(CONSTELLATION_DIR, "dynamic_state_500ms_for_50s")
     fstate_file = os.path.join(dynamic_dir, "fstate_%d.txt" % time_ns)
     if not os.path.isfile(fstate_file):
         print("ERROR: fstate file not found:", fstate_file)

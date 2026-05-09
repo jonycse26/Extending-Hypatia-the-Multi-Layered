@@ -1,0 +1,2 @@
+leo_num_sats,meo_num_sats,max_leo_per_meo,cross_layer_isl_count,leo_with_cross_layer,leo_without_cross_layer,max_cross_if_uncapped_estimate,cross_layer_earth_clear_chords,cross_layer_earth_blocked_chords,leo_isl_topo_count,leo_isl_earth_clear,meo_isl_topo_count,meo_isl_earth_clear
+1156,36,5,180,180,976,180,180,0,2312,2312,72,72

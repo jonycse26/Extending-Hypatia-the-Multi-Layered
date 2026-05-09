@@ -1,0 +1,2 @@
+mode,ping_run,tcp_run,out_of_order_rate_events_per_s,cwnd_variation_std,throughput_std_mbps
+LEO-only,leo_only_1156_to_1168_pings,leo_only_1156_to_1168_tcp,5.96,3426.7425251325435,1.5954442697984283

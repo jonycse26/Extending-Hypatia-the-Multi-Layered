@@ -6,16 +6,20 @@ This directory contains experiments to evaluate the performance of multi-layer s
 
 The experiments demonstrate and evaluate:
 1. **Multi-layer vs LEO-only comparison** - Shows benefits of MEO backhaul for long-distance traffic
-2. **MEO threshold behavior** - Tests when MEO is used based on distance/hop thresholds
-3. **Load performance** - Evaluates multi-layer performance under different traffic loads
+2. **MEO / routing scenarios (experiment 2)** - Three multilayer flows with **distance-tier labels** (Tokyo–BA, Mumbai–Lima, Lima–Karachi) on default fstate; for **hop/distance threshold sweeps** use `example_1_threshold_sensitivity.py`
+3. **Distance-based scenario analysis (Example 3)** - Short / medium / long great-circle pairs (Manila–Dalian, Istanbul–Nairobi, Rio–St. Petersburg) on default multilayer fstate
+
+## Shared evaluation helpers
+
+- **`evaluation_utils.py`** — `extract_metrics`, `export_results_csv`, `run_ns3`, and MEO ISL proxy metrics (used by the example scripts and CSV export).
 
 ## Example Files
 
 Three standalone example files are provided for quick demonstration:
 
-- **`example_1_meo_routing.py`** - Proof-of-concept MEO routing demonstration
-- **`example_2_comparison.py`** - Multi-layer vs LEO-only performance comparison  
-- **`example_3_load_test.py`** - Load performance evaluation under different traffic conditions
+- **`example_1_threshold_sensitivity.py`** — **Threshold sensitivity** — uses `experiment1_pairs_multilayer`; sweeps `meo_threshold_hops` (and optional `meo_threshold_distance_m`); regenerates `dynamic_state_*_mh*_md*` per point. *Not* part of step_1–3.
+- **`example_2_comparison.py`** — Recreates **experiment 1**-style multilayer vs LEO-only runs (same pairs as `run_list.experiment1_pairs_*`). Optional; step 1 already generates those runs.
+- **`example_3_distance_based_scenario_analysis.py`** — **Example 3: Distance-based scenario analysis** — three multilayer TCP runs (`short` / `medium` / `long` great-circle tiers: Manila–Dalian, Istanbul–Nairobi, Rio–St. Petersburg); default `dynamic_state_500ms_for_50s` (same as the step pipeline). Optional `--export-csv-from-runs` for `example_3_distance_scenario_results.csv`.
 
 See `EXAMPLES.md` for detailed usage instructions for each example.
 
@@ -31,122 +35,94 @@ This will generate both:
 - Multi-layer constellation (LEO + MEO) 
 - LEO-only baseline (for comparison)
 
-**Note**: This step can take **2-4 hours** depending on your system:
-- Multi-layer constellation: ~2-3 hours (1,192 satellites, complex routing)
-- LEO-only baseline: ~30-60 minutes (1,156 satellites, simpler routing)
-- Total: **2-4 hours**
+**Note**: `step_0_generate_constellation.py` uses **50 s** duration and **500 ms** timesteps (aligned with `run_list.py` → `dynamic_state_500ms_for_50s`). Runtime depends strongly on CPU and may be significantly longer than the 5s/1000ms setup.
 
-**Why it takes so long:**
-- Generates dynamic state for 200 seconds with 100ms time steps (2,000 time steps)
-- Multi-layer routing algorithm is computationally expensive
-- Each time step requires path calculations for all satellite pairs
-- Uses 4 threads for parallel processing
+**Why it takes time:** multi-layer routing over 1,192 nodes (LEO + MEO) per snapshot; LEO-only has 1,156 satellites. Default **4** threads.
 
-**Check progress while running:**
+**Check progress:**
 ```bash
-# In another terminal, check progress:
 python check_progress.py
-
-# Or check manually:
-ls ../../satellite_networks_state/gen_data/kuiper_630_meo/dynamic_state_ground_stations/fstate_*.txt | wc -l
-# Should show ~2000 files when complete
+# Snapshot count (multilayer gen_data folder name matches run_list.multilayer_satellite_network):
+ls ../../satellite_networks_state/gen_data/kuiper_630_meo_isls_plus_grid_with_cross_layer_ground_stations_top_100_algorithm_free_one_multi_layer/dynamic_state_500ms_for_50s/fstate_*.txt 2>/dev/null | wc -l
 ```
 
-**If it's taking too long, you can:**
-1. Reduce duration (e.g., 50 seconds instead of 200):
-   - Edit `step_0_generate_constellation.py` line 73: `duration_s = 50` 
-2. Increase time step (e.g., 200ms instead of 100ms):
-   - Edit line 74: `time_step_ms = 200`
-3. Use more threads (if you have more CPU cores):
-   - Edit line 75: `num_threads = 8`
+**Tuning:** edit `duration_s`, `time_step_ms`, `num_threads` in `step_0_generate_constellation.py` (`main()`). If you change duration/timestep, update **`run_list.py`** (and regenerate) so `[DYNAMIC-STATE]` in run configs matches the folder name.
 
 ### Step 1: Generate Run Configurations
 ```bash
 python step_1_generate_runs.py
 ```
-This creates the run directories and configuration files for all experiments.
+Creates run directories for **TCP: experiments 1–2 + 3** and **ping: experiments 1–2** only.
+
+- **Experiment 1** (same idea as `example_2_comparison.py`): paired **multilayer** vs **LEO-only** TCP + ping for **Mumbai–Lima, Lima–Karachi, Tokyo–Buenos-Aires** (`run_list.experiment1_pairs_*`). Compare `pdf/multilayer_*` vs `pdf/leo_only_*`.
+- **Experiment 2**: `threshold_test_*` TCP + ping for **Tokyo–BA, Mumbai–Lima, Lima–Karachi** (`experiment2_pairs_multilayer` — distance-tier labels).
+- **Experiment 3**: `example3_distance_{short,medium,long}_*_tcp` — **multilayer only**; **Manila–Dalian, Istanbul–Nairobi, Rio–St. Petersburg** (`experiment3_pairs_multilayer`).
+
+`step_1`, `step_2`, and `step_3` all use **`get_tcp_run_list_for_step3_plots()`** for TCP (core experiments 1–2 + experiment 3). Ping runs remain experiments 1–2 only.
+
+All of the above use default **`dynamic_state_500ms_for_50s`** (complete **step 0** first).
 
 ### Step 2: Run Simulations
 ```bash
 python step_2_run.py
 ```
-This executes all ns-3 simulations. The script runs up to 4 simulations in parallel.
+Runs ns-3 for every TCP run from step 1 (including experiment 3), plus all ping runs. Up to 4 simulations in parallel.
 
 ### Step 3: Generate Plots (Optional)
 ```bash
 python step_3_generate_plots.py
 ```
-This generates plots comparing multi-layer vs LEO-only performance.
+Rebuilds `pdf/` and `data/` with gnuplot outputs for the same TCP runs (exp 1–2 + 3) and ping runs (exp 1–2). Any TCP run with missing or empty logs is skipped with a warning.
+
+**Standalone scripts** (`example_1_threshold_sensitivity.py`, etc.) are separate from this pipeline; their runs are not created by step 1.
 
 ## Prerequisites
 
 If you prefer to generate constellation states manually:
 
-1. **Generate the multi-layer constellation state:**
+1. **Generate the multi-layer constellation state** (arguments must match `run_list.py` / `step_0` — here **50 s**, **500 ms** timestep):
    ```bash
    cd ../../satellite_networks_state
-   python main_kuiper_630_meo.py 200 100 isls_plus_grid_with_cross_layer ground_stations_top_100 algorithm_free_one_multi_layer 4
+   python main_kuiper_630_meo.py 50 500 isls_plus_grid_with_cross_layer ground_stations_top_100 algorithm_free_one_multi_layer 4
    ```
 
-2. **Ensure LEO-only baseline exists** (for comparison):
+2. **LEO-only baseline** (same duration / timestep):
    ```bash
-   python main_kuiper_630.py 200 100 isls_plus_grid ground_stations_top_100 algorithm_free_one_only_over_isls 4
+   python main_kuiper_630.py 50 500 isls_plus_grid ground_stations_top_100 algorithm_free_one_only_over_isls 4
    ```
  
 ## Running Experiments
 
-The experiments follow a three-step process:
-
-### Step 1: Generate Run Configurations
-```bash
-python step_1_generate_runs.py
-```
-This creates the run directories and configuration files for all experiments.
-
-### Step 2: Run Simulations 
-```bash
-python step_2_run.py
-```
-This executes all ns-3 simulations. The script runs up to 4 simulations in parallel.
-
-### Step 3: Generate Plots (Optional)
-```bash
-python step_3_generate_plots.py
-```
-This generates plots comparing multi-layer vs LEO-only performance.
+After **step 0**, run **step 1 → 2 → 3** as in [Quick Start](#quick-start). Step 1 **deletes and recreates** `runs/`, `pdf/`, and `data/` — back up anything you need first.
 
 ## Experiment Details
 
 ### Experiment 1: Multi-layer vs LEO-only Comparison
-- **Purpose**: Demonstrate the benefit of MEO backhaul for long-distance communication
-- **Pairs tested** (3 pairs, each with TCP and ping measurements):
-  1. **Rio de Janeiro to St. Petersburg** (~11,000 km)
-     - Multi-layer: `multilayer_1210_to_1265_*`
-     - LEO-only: `leo_only_1174_to_1229_*`
-  2. **Manila to Dalian** (~2,800 km)
-     - Multi-layer: `multilayer_1209_to_1277_*`
-     - LEO-only: `leo_only_1173_to_1241_*`
-  3. **Istanbul to Nairobi** (~4,500 km)
-     - Multi-layer: `multilayer_1206_to_1288_*`
-     - LEO-only: `leo_only_1170_to_1252_*`
-- **Metrics**: RTT, throughput, path length, ISL utilization
+- **Purpose**: Demonstrate the benefit of MEO backhaul vs LEO-only for the same ground pairs (`run_list.experiment1_pairs_*`).
+- **Pairs tested** (3 pairs; TCP + ping each; multilayer node id = LEO id + 36):
+  1. **Mumbai to Lima** — multilayer `1196 → 1221`, LEO `1160 → 1185`
+  2. **Lima to Karachi** — multilayer `1221 → 1203`, LEO `1185 → 1167`
+  3. **Tokyo to Buenos-Aires** — multilayer `1192 → 1204`, LEO `1156 → 1168`
+- **Run name pattern**: `multilayer_<from>_to_<to>_{tcp,pings}`, `leo_only_<from>_to_<to>_{tcp,pings}`
+- **Metrics**: RTT, throughput, ISL utilization (compare multilayer vs LEO-only plots side by side)
 
 ### Experiment 2: MEO Threshold Behavior
-- **Purpose**: Understand when MEO is used based on distance/hop thresholds
-- **Pairs tested** (3 pairs with different distances):
-  - `threshold_test_1209_to_1277_*` (Manila to Dalian, ~2,800 km)
-  - `threshold_test_1210_to_1265_*` (Rio de Janeiro to St. Petersburg, ~11,000 km)
-  - `threshold_test_1216_to_1213_*` (Shorter distance)
-- **Metrics**: MEO utilization, routing decisions, path characteristics
+- **Purpose**: Same multilayer constellation with **distance-tier labels** (very long / long / shorter) — `run_list.experiment2_pairs_multilayer`.
+- **Pairs tested** (TCP + ping; all multilayer):
+  - `threshold_test_1192_to_1204_*` — Tokyo to Buenos-Aires (very long)
+  - `threshold_test_1196_to_1221_*` — Mumbai to Lima (long)
+  - `threshold_test_1221_to_1203_*` — Lima to Karachi (shorter)
+- **Metrics**: MEO utilization, routing, path characteristics
 
-### Experiment 3: Load Performance
-- **Purpose**: Evaluate multi-layer performance under different traffic loads
-- **Pairs tested** (3 pairs × 3 load levels = 9 runs):
-  - `load_test_*_load_1206_to_1288_tcp` (Istanbul to Nairobi)
-  - `load_test_*_load_1210_to_1265_tcp` (Rio de Janeiro to St. Petersburg)
-  - `load_test_*_load_1216_to_1213_tcp` (Shorter distance)
-- **Load levels**: 5 Mbps (low), 10 Mbps (medium), 20 Mbps (high)
-- **Metrics**: Throughput, latency, queue utilization, MEO efficiency
+### Experiment 3: Distance-based scenario analysis
+- **Purpose**: Compare TCP performance and MEO usage across **short / medium / long** great-circle routes on the same multilayer topology (default forwarding state).
+- **Pairs tested** (3 TCP runs; README-aligned with experiment 2 style):
+  - `example3_distance_short_1209_to_1277_tcp` — Manila to Dalian (~2,800 km)
+  - `example3_distance_medium_1206_to_1288_tcp` — Istanbul to Nairobi (~4,500 km)
+  - `example3_distance_long_1210_to_1265_tcp` — Rio de Janeiro to St. Petersburg (~11,000 km)
+- **Routing**: Default `dynamic_state_500ms_for_50s` (no per-run `meo_threshold_distance_m` sweep).
+- **Traffic**: Fixed 10 Mbps per run
+- **Metrics**: Throughput, RTT, completion, MEO ISL utilization proxies (`evaluation_utils`)
 
 ## Expected Results
 
@@ -167,49 +143,29 @@ After running the experiments, results are stored in:
 
 ### Example Result Paths:
 
+**Experiment 1 (multilayer vs LEO-only) — 3 pairs**
 
+| Pair | Multilayer TCP | LEO-only TCP |
+|------|----------------|--------------|
+| Mumbai–Lima | `runs/multilayer_1196_to_1221_tcp/` | `runs/leo_only_1160_to_1185_tcp/` |
+| Lima–Karachi | `runs/multilayer_1221_to_1203_tcp/` | `runs/leo_only_1185_to_1167_tcp/` |
+| Tokyo–Buenos-Aires | `runs/multilayer_1192_to_1204_tcp/` | `runs/leo_only_1156_to_1168_tcp/` |
 
-**Experiment 1 (Comparison) - 3 pairs:**
+Same node IDs with `_pings` instead of `_tcp` for pingmesh runs. Plots mirror under `pdf/<run_name>/`.
 
-1. **Rio de Janeiro to St. Petersburg** (~11,000 km):
-   - Multi-layer TCP: `runs/multilayer_1210_to_1265_tcp/logs_ns3/`
-   - LEO-only TCP: `runs/leo_only_1174_to_1229_tcp/logs_ns3/`
-   - Multi-layer Pings: `runs/multilayer_1210_to_1265_pings/logs_ns3/`
-   - LEO-only Pings: `runs/leo_only_1174_to_1229_pings/logs_ns3/`
-   - Plots: `pdf/multilayer_1210_to_1265_tcp/` and `pdf/leo_only_1174_to_1229_tcp/`
+**Experiment 2 (threshold_test, multilayer only)**
 
-2. **Manila to Dalian** (~2,800 km):
-   - Multi-layer TCP: `runs/multilayer_1209_to_1277_tcp/logs_ns3/`
-   - LEO-only TCP: `runs/leo_only_1173_to_1241_tcp/logs_ns3/`
-   - Multi-layer Pings: `runs/multilayer_1209_to_1277_pings/logs_ns3/`
-   - LEO-only Pings: `runs/leo_only_1173_to_1241_pings/logs_ns3/`
-   - Plots: `pdf/multilayer_1209_to_1277_tcp/` and `pdf/leo_only_1173_to_1241_tcp/`
+- `runs/threshold_test_1192_to_1204_{tcp,pings}/` — Tokyo–Buenos-Aires  
+- `runs/threshold_test_1196_to_1221_{tcp,pings}/` — Mumbai–Lima  
+- `runs/threshold_test_1221_to_1203_{tcp,pings}/` — Lima–Karachi  
 
-3. **Istanbul to Nairobi** (~4,500 km):
-   - Multi-layer TCP: `runs/multilayer_1206_to_1288_tcp/logs_ns3/`
-   - LEO-only TCP: `runs/leo_only_1170_to_1252_tcp/logs_ns3/`
-   - Multi-layer Pings: `runs/multilayer_1206_to_1288_pings/logs_ns3/`
-   - LEO-only Pings: `runs/leo_only_1170_to_1252_pings/logs_ns3/`
-   - Plots: `pdf/multilayer_1206_to_1288_tcp/` and `pdf/leo_only_1170_to_1252_tcp/`
+ISL utilization: `runs/threshold_test_*/logs_ns3/isl_utilization.csv` — Plots: `pdf/threshold_test_*/`
 
-**Experiment 2 (Threshold) - 3 pairs:**
-- `runs/threshold_test_1209_to_1277_*/logs_ns3/` (Manila to Dalian)
-- `runs/threshold_test_1210_to_1265_*/logs_ns3/` (Rio de Janeiro to St. Petersburg)
-- `runs/threshold_test_1216_to_1213_*/logs_ns3/` (Shorter distance)
-- ISL utilization: `runs/threshold_test_*/logs_ns3/isl_utilization.csv`
-- Plots: `pdf/threshold_test_*/`
-
-**Experiment 3 (Load) - 3 pairs with 3 load levels each:**
-- `runs/load_test_low_load_1206_to_1288_tcp/logs_ns3/` (Istanbul to Nairobi, 5 Mbps)
-- `runs/load_test_medium_load_1206_to_1288_tcp/logs_ns3/` (Istanbul to Nairobi, 10 Mbps)
-- `runs/load_test_high_load_1206_to_1288_tcp/logs_ns3/` (Istanbul to Nairobi, 20 Mbps)
-- `runs/load_test_low_load_1210_to_1265_tcp/logs_ns3/` (Rio de Janeiro to St. Petersburg, 5 Mbps)
-- `runs/load_test_medium_load_1210_to_1265_tcp/logs_ns3/` (Rio de Janeiro to St. Petersburg, 10 Mbps)
-- `runs/load_test_high_load_1210_to_1265_tcp/logs_ns3/` (Rio de Janeiro to St. Petersburg, 20 Mbps)
-- `runs/load_test_low_load_1216_to_1213_tcp/logs_ns3/` (Shorter distance, 5 Mbps)
-- `runs/load_test_medium_load_1216_to_1213_tcp/logs_ns3/` (Shorter distance, 10 Mbps)
-- `runs/load_test_high_load_1216_to_1213_tcp/logs_ns3/` (Shorter distance, 20 Mbps)
-- Plots: `pdf/load_test_*_load_*/`
+**Experiment 3 (distance tiers) - 3 TCP runs (10 Mbps each):**
+- `runs/example3_distance_short_1209_to_1277_tcp/logs_ns3/` (Manila–Dalian)
+- `runs/example3_distance_medium_1206_to_1288_tcp/logs_ns3/` (Istanbul–Nairobi)
+- `runs/example3_distance_long_1210_to_1265_tcp/logs_ns3/` (Rio–St. Petersburg)
+- Plots: `pdf/example3_distance_*_tcp/` after `step_3_generate_plots.py` (or `plot_tcp_flow.py` manually)
 
 ### Key Result Files in Each Run:
 - `console.txt` - Simulation console output
@@ -219,19 +175,17 @@ After running the experiments, results are stored in:
 - `isl_utilization.csv` - ISL utilization data
 - `pingmesh.csv` - Ping measurements (for ping runs)
 
-**Note on Node IDs**: Multi-layer constellation has 36 additional MEO satellites, so ground station node IDs are offset by +36 compared to LEO-only. For example:
-- LEO-only: Rio de Janeiro = 1174, St. Petersburg = 1229
-- Multi-layer: Rio de Janeiro = 1210 (1174+36), St. Petersburg = 1265 (1229+36)
+**Note on Node IDs**: Multilayer adds **36** MEO satellites before ground stations in the numbering, so **multilayer GS id = LEO-only GS id + 36** (`run_list.OFFSET_DIFF`). Example: **Mumbai** LEO `1160` → multilayer `1196`. Experiment 3 long-haul pair (Rio–St. Petersburg) uses LEO `1174`→`1229` and multilayer `1210`→`1265`.
 
 See `QUICK_START.md` for detailed result locations and viewing commands.
 
 ## Analysis
 
 After running experiments, analyze:
-1. **RTT comparison**: Multi-layer vs LEO-only for each pair
-2. **Path analysis**: Number of hops, path length, MEO usage
-3. **Utilization**: ISL utilization in LEO vs MEO layers
-4. **Throughput**: Goodput under different load conditions
+1. **RTT comparison**: Multilayer vs LEO-only (experiment 1) for each pair
+2. **Path / routing**: Hops, MEO usage (`console.txt`, ISL logs)
+3. **Utilization**: LEO vs MEO-touching ISL utilization
+4. **Throughput vs distance tier**: Experiment 3 (`example3_distance_{short,medium,long}_*`) on multilayer; experiment 1 for **LEO vs multilayer** goodput on the Mumbai / Lima / Tokyo pairs
 
 ## Coverage Limitations
 

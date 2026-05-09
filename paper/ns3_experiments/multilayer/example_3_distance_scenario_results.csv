@@ -1,0 +1,4 @@
+distance_tier,pair,from_id,to_id,run_name,avg_throughput_mbps,avg_rtt_ms,completion_time_s,transfer_complete,bytes_transferred_final,meo_touching_isl_max_util,meo_meo_isl_max_util,meo_touching_isl_mean_util_nz,meo_used_any,avg_hop_count,avg_path_stretch,path_stability_ratio,bottleneck_utilization,meo_usage_ratio
+long,"Long distance (Rio de Janeiro to St. Petersburg, ~11,000 km)",1210,1265,example3_distance_long_1210_to_1265_tcp,4.069344,355.6267123546618,,False,2543340,0.990073,0.0,0.26152555,True,3.0,1.0,1.0,0.863841,0.3333333333333333
+medium,"Medium distance (Istanbul to Nairobi, ~4,500 km)",1206,1288,example3_distance_medium_1206_to_1288_tcp,8.944608,128.17708912506623,,False,5590380,0.0,0.0,,False,1.0,1.0,1.0,,0.0
+short,"Short distance (Manila to Dalian, ~2,800 km)",1209,1277,example3_distance_short_1209_to_1277_tcp,9.079296,119.14721587545407,,False,5674560,0.0,0.0,,False,1.0,1.0,1.0,,0.0

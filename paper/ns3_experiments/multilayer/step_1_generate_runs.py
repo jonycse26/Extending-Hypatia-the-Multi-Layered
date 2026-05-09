@@ -20,6 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Pipeline (with step_2 / step_3)
+# -------------------------------
+# TCP run configs: experiments 1–2 + experiment 3 (``get_tcp_run_list_for_step3_plots``).
+# Ping run configs: experiments 1–2 only (unchanged).
+#
+# Experiment 3 uses the same default ``dynamic_state_500ms_for_50s`` as other multilayer runs
+# (no extra ``_mh3_md*`` trees). Ensure step_0 / constellation gen completed that folder.
+
 import exputil
 
 try:
@@ -33,8 +41,8 @@ local_shell.remove_force_recursive("runs")
 local_shell.remove_force_recursive("pdf")
 local_shell.remove_force_recursive("data")
 
-# TCP runs
-for run in get_tcp_run_list():
+# TCP runs (must match step_2_run.py and step_3_generate_plots.py)
+for run in get_tcp_run_list_for_step3_plots():
 
     # Prepare run directory
     run_dir = "runs/" + run["name"]
@@ -126,6 +134,9 @@ for run in get_pings_run_list():
 
 # Print finish
 print("Success: generated runs")
-print("Total TCP runs: %d" % len(get_tcp_run_list()))
+_core = len(get_tcp_run_list())
+_tcp_all = len(get_tcp_run_list_for_step3_plots())
+print("Total TCP runs: %d (experiments 1–2: %d, experiment 3: %d)"
+      % (_tcp_all, _core, _tcp_all - _core))
 print("Total ping runs: %d" % len(get_pings_run_list()))
 

@@ -58,12 +58,12 @@ class MainHelper:
 
     def calculate(
             self,
-            output_generated_data_dir,      # Final directory in which the result will be placed
+            output_generated_data_dir,      
             duration_s,
             time_step_ms,
-            isl_selection,            # isls_{none, plus_grid}
-            gs_selection,             # ground_stations_{top_100, paris_moscow_grid}
-            dynamic_state_algorithm,  # algorithm_{free_one_only_{gs_relays,_over_isls}, paired_many_only_over_isls}
+            isl_selection,            
+            gs_selection,             
+            dynamic_state_algorithm,  
             num_threads
     ):
 
@@ -147,17 +147,17 @@ class MainHelper:
             output_generated_data_dir + "/" + name + "/gsl_interfaces_info.txt",
             self.NUM_ORBS * self.NUM_SATS_PER_ORB,
             len(ground_stations),
-            gsl_interfaces_per_satellite,  # GSL interfaces per satellite
-            1,  # (GSL) Interfaces per ground station
-            1,  # Aggregate max. bandwidth satellite (unit unspecified)
-            1   # Aggregate max. bandwidth ground station (same unspecified unit)
+            gsl_interfaces_per_satellite,  
+            1,  
+            1,  
+            1   
         )
 
         # Forwarding state
         print("Generating forwarding state...")
         satgen.help_dynamic_state(
             output_generated_data_dir,
-            num_threads,  # Number of threads
+            num_threads,  
             name,
             time_step_ms,
             duration_s,

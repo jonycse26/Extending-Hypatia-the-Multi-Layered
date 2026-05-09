@@ -18,24 +18,42 @@ from satgen.tles import read_tles
 from satgen.ground_stations import read_ground_stations_extended
 from satgen.description import read_description
 
-def get_hop_count_for_pair(from_id, to_id, fstate_file, leo_num_sats, total_sats):
-    """Get hop count for a specific pair at a specific time.
+def load_full_fstate_up_to(dynamic_state_dir, time_ns):
+    """
+    Fstate files are deltas: each file only contains entries that changed from
+    the previous timestep. To get full state at time_ns, merge all fstate_*.txt
+    with filename time <= time_ns in order.
+    """
+    pattern = os.path.join(dynamic_state_dir, 'fstate_*.txt')
+    files = []
+    for path in glob.glob(pattern):
+        try:
+            t = int(os.path.basename(path).replace('fstate_', '').replace('.txt', ''))
+            if t <= time_ns:
+                files.append((t, path))
+        except ValueError:
+            continue
+    files.sort(key=lambda x: x[0])
+    fstate_dict = {}
+    for _t, path in files:
+        with open(path, 'r') as f:
+            for line in f:
+                parts = line.strip().split(',')
+                if len(parts) >= 3:
+                    try:
+                        src = int(parts[0])
+                        dst = int(parts[1])
+                        next_hop = int(parts[2])
+                        fstate_dict[(src, dst)] = next_hop
+                    except (ValueError, IndexError):
+                        continue
+    return fstate_dict
+
+
+def get_hop_count_for_pair(from_id, to_id, fstate_dict, leo_num_sats, total_sats):
+    """Get hop count for a specific pair given full forwarding state at one time.
     Hop count = number of satellites in the path (excluding GS).
     """
-    # Read forwarding state
-    fstate_dict = {}
-    with open(fstate_file, 'r') as f:
-        for line in f:
-            parts = line.strip().split(',')
-            if len(parts) >= 3:
-                try:
-                    src = int(parts[0])
-                    dst = int(parts[1])
-                    next_hop = int(parts[2])
-                    fstate_dict[(src, dst)] = next_hop
-                except (ValueError, IndexError):
-                    continue
-
     if (from_id, to_id) not in fstate_dict or fstate_dict[(from_id, to_id)] == -1:
         return None, None, None, False
 
@@ -88,7 +106,7 @@ def show_hop_counts():
         '../../satellite_networks_state/gen_data/' + run_list.multilayer_satellite_network
     ))
     constellation_dir = base_dir
-    dynamic_state_dir = os.path.join(base_dir, 'dynamic_state_1000ms_for_5s')
+    dynamic_state_dir = os.path.join(base_dir, 'dynamic_state_500ms_for_50s')
 
     if not os.path.exists(dynamic_state_dir):
         print(f"ERROR: Dynamic state directory not found: {dynamic_state_dir}")
@@ -113,7 +131,14 @@ def show_hop_counts():
 
     pairs = [(f, t, short_name(f, d), short_name(t, d)) for (f, t, d) in pairs_raw]
 
-    fstate_files = sorted(glob.glob(os.path.join(dynamic_state_dir, 'fstate_*.txt')))[:6]
+    # Collect timesteps: fstate files are deltas, we merge 0..t to get full state at t
+    fstate_files = sorted(glob.glob(os.path.join(dynamic_state_dir, 'fstate_*.txt')))
+    time_ns_list = []
+    for path in fstate_files[:6]:
+        try:
+            time_ns_list.append(int(os.path.basename(path).replace('fstate_', '').replace('.txt', '')))
+        except ValueError:
+            pass
 
     print("=" * 80)
     print("Hop Count Analysis (from run_list.experiment1_pairs_multilayer)")
@@ -127,12 +152,12 @@ def show_hop_counts():
         print(f"{'Time':<8} {'Hops':<6} {'MEO':<8} {'Path'}")
         print("-" * 80)
 
-        for fstate_file in fstate_files:
+        for time_ns in time_ns_list:
+            fstate_dict = load_full_fstate_up_to(dynamic_state_dir, time_ns)
             hop_count, uses_meo, path_nodes, invalid_meo_to_gs = get_hop_count_for_pair(
-                from_id, to_id, fstate_file, leo_num_sats, total_sats
+                from_id, to_id, fstate_dict, leo_num_sats, total_sats
             )
-            time_str = os.path.basename(fstate_file).replace('fstate_', '').replace('.txt', '')
-            time_s = int(time_str) / 1e9
+            time_s = time_ns / 1e9
 
             if hop_count is not None:
                 meo_str = "Yes" if uses_meo else "No"

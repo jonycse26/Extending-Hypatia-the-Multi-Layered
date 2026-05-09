@@ -20,6 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Runs ns-3 for the same TCP list as step_1 / step_3: experiments 1–2 + experiment 3.
+# Experiment 3 uses default multilayer dynamic state (same prerequisite as exp 1–2).
+
 import exputil
 import time
 
@@ -35,7 +38,7 @@ max_num_processes = 4
 try:
     has_screens = local_shell.count_screens() != 0
 except Exception:
-    has_screens = False  # if 'screen' command not found, skip it
+    has_screens = False  
 
 if has_screens:
     print("There is a screen already running. "
@@ -46,7 +49,7 @@ if has_screens:
 
 commands_to_run = []
 
-for run in get_tcp_run_list():
+for run in get_tcp_run_list_for_step3_plots():
     logs_ns3_dir = "runs/" + run["name"] + "/logs_ns3"
     local_shell.remove_force_recursive(logs_ns3_dir)
     local_shell.make_full_dir(logs_ns3_dir)

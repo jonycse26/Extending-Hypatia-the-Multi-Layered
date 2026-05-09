@@ -1,0 +1,7 @@
+tier,mode,pair,run_name,avg_throughput_mbps,completion_time_s,active_transfer_duration_s,completion_or_active_s,avg_hop_count,path_available_ratio
+short,leo_only,"Short distance (Manila to Dalian, ~2,800 km)",example3_distance_short_1173_to_1241_tcp,9.5372352,nan,24.935977104,24.935977104,2.6923076923076925,1.0
+short,multilayer,"Short distance (Manila to Dalian, ~2,800 km)",example3_distance_short_1209_to_1277_tcp,9.2351808,nan,24.955876504,24.955876504,1.0,1.0
+medium,leo_only,"Medium distance (Istanbul to Nairobi, ~4,500 km)",example3_distance_medium_1170_to_1252_tcp,9.3217344,nan,24.863195541,24.863195541,7.576923076923077,1.0
+medium,multilayer,"Medium distance (Istanbul to Nairobi, ~4,500 km)",example3_distance_medium_1206_to_1288_tcp,9.344256,nan,24.929205598,24.929205598,1.0,1.0
+long,leo_only,"Long distance (Rio de Janeiro to St. Petersburg, ~11,000 km)",example3_distance_long_1174_to_1229_tcp,7.0452864,nan,24.755533219,24.755533219,11.307692307692308,1.0
+long,multilayer,"Long distance (Rio de Janeiro to St. Petersburg, ~11,000 km)",example3_distance_long_1210_to_1265_tcp,3.5694528,nan,23.626766827,23.626766827,5.0,1.0

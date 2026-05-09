@@ -51,13 +51,10 @@ def main():
     print("  1. Multi-layer constellation (kuiper_630_meo)")
     print("  2. LEO-only baseline (kuiper_630) for comparison")
     
-    # Parameters - OPTIMIZED FOR FAST GENERATION (testing/demo purposes)
-    # Reduced duration and increased time step to minimize generation time
-    duration_s = 5          # Reduced from 25 to 5 seconds (5x faster)
-    time_step_ms = 1000     # Increased from 500 to 1000 ms (2x faster)
-    num_threads = 4         # Keep 4 threads for parallel processing
-    # Total time steps: (5 * 1000) / 1000 + 1 = 6 time steps
-    # Expected time: ~1-2 hours total (instead of 10-21 hours)
+    # Parameters (keep in sync with run_list.py dynamic_state / simulation times)
+    duration_s = 25
+    time_step_ms = 1000
+    num_threads = 4
     
     # Generate multi-layer constellation
     cmd_multilayer = (

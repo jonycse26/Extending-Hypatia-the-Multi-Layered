@@ -127,7 +127,7 @@ def check_path_distances_for_pair(from_id, to_id, pair_name):
     ))
     
     constellation_dir = base_dir
-    dynamic_state_dir = os.path.join(base_dir, 'dynamic_state_1000ms_for_5s')
+    dynamic_state_dir = os.path.join(base_dir, 'dynamic_state_500ms_for_50s')
     
     if not os.path.exists(dynamic_state_dir):
         print(f"ERROR: Dynamic state directory not found: {dynamic_state_dir}")

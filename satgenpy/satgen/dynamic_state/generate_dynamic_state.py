@@ -24,6 +24,7 @@ from satgen.distance_tools import *
 from satgen.description import read_description
 from astropy import units as u
 import math
+import os
 import networkx as nx
 import numpy as np
 from .algorithm_free_one_only_gs_relays import algorithm_free_one_only_gs_relays
@@ -45,25 +46,22 @@ def generate_dynamic_state(
         list_gsl_interfaces_info,
         max_gsl_length_m,
         max_isl_length_m,
-        dynamic_state_algorithm,  # Options:
-                                  # "algorithm_free_one_only_gs_relays"
-                                  # "algorithm_free_one_only_over_isls"
-                                  # "algorithm_paired_many_only_over_isls"
-                                  # "algorithm_free_one_multi_layer"
+        dynamic_state_algorithm,
         enable_verbose_logs,
-        description_file_path=None  # Optional: for multi-layer constellations
+        description_file_path=None,
+        meo_threshold_hops=3,
+        meo_threshold_distance_m=10000000.0,
 ):
     if offset_ns % time_step_ns != 0:
         raise ValueError("Offset must be a multiple of time_step_ns")
     prev_output = None
     i = 0
-    total_iterations = ((simulation_end_time_ns - offset_ns) / time_step_ns) + 1  # +1 to include final time step
-    # FIX: Include the final time step by adding time_step_ns to the end of range
-    # For duration=5s and time_step=1s, we need: 0, 1, 2, 3, 4, 5 (6 steps)
+    total_iterations = ((simulation_end_time_ns - offset_ns) / time_step_ns) + 1  
+   
     for time_since_epoch_ns in range(offset_ns, simulation_end_time_ns + time_step_ns, time_step_ns):
         time_s = time_since_epoch_ns / 1e9
         if not enable_verbose_logs:
-            # Always print progress for each time step (not just every 10%)
+            # Always print progress for each time step 
             print("[Thread] Starting time step T=%.1fs (%d ns) [%d/%d]" % (
                 time_s, time_since_epoch_ns, i + 1, int(total_iterations)
             ))
@@ -81,7 +79,9 @@ def generate_dynamic_state(
             dynamic_state_algorithm,
             prev_output,
             enable_verbose_logs,
-            description_file_path=description_file_path
+            description_file_path=description_file_path,
+            meo_threshold_hops=meo_threshold_hops,
+            meo_threshold_distance_m=meo_threshold_distance_m,
         )
         if not enable_verbose_logs:
             time_s = time_since_epoch_ns / 1e9
@@ -101,7 +101,9 @@ def generate_dynamic_state_at(
         dynamic_state_algorithm,
         prev_output,
         enable_verbose_logs,
-        description_file_path=None  # Optional: path to description file for multi-layer info
+        description_file_path=None,
+        meo_threshold_hops=3,
+        meo_threshold_distance_m=10000000.0,
 ):
     if enable_verbose_logs:
         print("FORWARDING STATE AT T = " + (str(time_since_epoch_ns))
@@ -140,15 +142,19 @@ def generate_dynamic_state_at(
     if enable_verbose_logs:
         print("\nISL INFORMATION")
 
-    # Determine LEO/MEO split for cross-layer ISL detection
-    leo_num_sats = len(satellites)  # Default: all satellites are LEO
+    # Determine LEO/MEO split and use constellation GSL from description when present
+    leo_num_sats = len(satellites)  
     if description_file_path:
         try:
             description = read_description(description_file_path)
             if "leo_num_sats" in description:
                 leo_num_sats = description["leo_num_sats"]
-        except:
-            pass  # Fall back to default
+            if "max_gsl_length_m" in description:
+                max_gsl_length_m = float(description["max_gsl_length_m"])
+                if enable_verbose_logs:
+                    print("  > Using max_gsl_length_m from description.txt: %.0f m" % max_gsl_length_m)
+        except Exception:
+            pass  # Fall back to caller value
 
     # ISL edges
     total_num_isls = 0
@@ -165,7 +171,7 @@ def generate_dynamic_state_at(
         is_cross_layer = ((a < leo_num_sats and b >= leo_num_sats) or 
                          (b < leo_num_sats and a >= leo_num_sats))
         
-        # Use more lenient threshold for cross-layer ISLs (they can be longer)
+        # Use more lenient threshold for cross-layer ISLs 
         effective_max_isl_length = max_isl_length_m
         if is_cross_layer:
             # Allow 50% more distance for cross-layer ISLs
@@ -246,6 +252,17 @@ def generate_dynamic_state_at(
     if enable_verbose_logs:
         print("  > Min. satellites in range... " + str(np.min(ground_station_num_in_range)))
         print("  > Max. satellites in range... " + str(np.max(ground_station_num_in_range)))
+        zeros = [gid for gid in range(len(ground_station_num_in_range)) if ground_station_num_in_range[gid] == 0]
+        if zeros:
+            print("  > GS with 0 sats in range (coverage gap): " + str(zeros))
+
+    # Write per-time-step coverage for plotting: gsl_coverage_per_timestep.csv
+    coverage_path = os.path.join(output_dynamic_state_dir, "gsl_coverage_per_timestep.csv")
+    write_header = not os.path.exists(coverage_path) or os.path.getsize(coverage_path) == 0
+    with open(coverage_path, "a") as fcov:
+        if write_header:
+            fcov.write("time_ns," + ",".join("g%d" % gid for gid in range(len(ground_station_num_in_range))) + "\n")
+        fcov.write(str(time_since_epoch_ns) + "," + ",".join(str(ground_station_num_in_range[gid]) for gid in range(len(ground_station_num_in_range))) + "\n")
 
     #################################
 
@@ -319,34 +336,32 @@ def generate_dynamic_state_at(
 
     elif dynamic_state_algorithm == "algorithm_free_one_multi_layer":
         # Determine LEO/MEO split
-        leo_num_sats = len(satellites)  # Default: all satellites are LEO
+        leo_num_sats = len(satellites)  
         if description_file_path:
             try:
                 description = read_description(description_file_path)
                 if "leo_num_sats" in description:
                     leo_num_sats = description["leo_num_sats"]
             except:
-                pass  # Fall back to default
+                pass  
         
         # If not found in description, try to determine from mean motion
-        # LEO satellites typically have mean motion > 10 rev/day
         if leo_num_sats == len(satellites) and len(satellites) > 0:
             # Check mean motion to determine split
             mean_motions = []
             for sat in satellites:
                 # Mean motion in revolutions per day
-                mean_motion = sat._n * 13750.9870831397 / 60.0  # Convert from rad/min to rev/day
+                mean_motion = sat._n * 13750.9870831397 / 60.0  
                 mean_motions.append(mean_motion)
             
-            # Find the split point (LEO has higher mean motion)
-            # Sort by mean motion descending and find where it drops significantly
+            # Find the split point 
             sorted_indices = sorted(range(len(mean_motions)), key=lambda i: mean_motions[i], reverse=True)
             if len(mean_motions) > 1:
                 # Find largest drop in mean motion
                 for i in range(len(sorted_indices) - 1):
                     idx1 = sorted_indices[i]
                     idx2 = sorted_indices[i + 1]
-                    if mean_motions[idx1] - mean_motions[idx2] > 2.0:  # Significant drop
+                    if mean_motions[idx1] - mean_motions[idx2] > 2.0: 
                         leo_num_sats = max(idx1, idx2) + 1
                         break
 
@@ -362,7 +377,9 @@ def generate_dynamic_state_at(
             list_gsl_interfaces_info,
             prev_output,
             enable_verbose_logs,
-            leo_num_sats=leo_num_sats
+            leo_num_sats=leo_num_sats,
+            meo_threshold_distance_m=meo_threshold_distance_m,
+            meo_threshold_hops=meo_threshold_hops,
         )
 
     else:

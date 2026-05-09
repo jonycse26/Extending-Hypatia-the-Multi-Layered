@@ -1,0 +1,3 @@
+pair,label,run_name,completion_time_s,rtt_variation_ms,rtt_variation_ratio,geodesic_rtt_ms,rtt_stretch,avg_hop_count,avg_path_stretch,path_stability_ratio,path_change_count,hop_count_variation,hop_count_ratio,bottleneck_utilization,meo_usage_ratio,out_of_order_rate
+Lima to Karachi,multilayer,multilayer_1221_to_1203_tcp,,124.82210299999997,1.2090822495812394,597.0,1.0387249016424511,4.0,1.0,0.84,4.0,0.0,1.0,0.12231115384615386,0.5,
+Lima to Karachi,leo_only,leo_only_1185_to_1167_tcp,,127.13624099999998,1.934825301470588,136.0,1.1586828608275797,15.0,1.0,1.0,0.0,0.0,1.0,0.9999970000000004,0.0,

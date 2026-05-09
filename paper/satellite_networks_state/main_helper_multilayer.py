@@ -33,7 +33,11 @@ class MainHelperMultiLayer:
             MEO_NUM_SATS_PER_ORB,
             MEO_INCLINATION_DEGREE,
             # Cross-layer ISL parameters
-            MAX_CROSS_LAYER_ISL_LENGTH_M=None,  
+            MAX_CROSS_LAYER_ISL_LENGTH_M=None,
+            # If set, caps LEO↔MEO links per MEO (passed to generate_multilayer_isls) and
+            # appends _xlm<N> to the output constellation name for sensitivity experiments.
+            # If None, uses legacy: max(40, ceil((LEO+MEO-1)/MEO_count)) per MEO (no name suffix).
+            max_leo_per_meo=None,
     ):
         self.BASE_NAME = BASE_NAME
         self.NICE_NAME = NICE_NAME
@@ -59,11 +63,9 @@ class MainHelperMultiLayer:
         self.MEO_INCLINATION_DEGREE = MEO_INCLINATION_DEGREE
         
         # Calculate derived parameters
-        # WGS72 value; taken from https://geographiclib.sourceforge.io/html/NET/NETGeographicLib_8h_source.html
         EARTH_RADIUS = 6378135.0
         
         # LEO GSL and ISL ranges
-        # Using elevation angle of 10 degrees 
         LEO_SATELLITE_CONE_RADIUS_M = LEO_ALTITUDE_M / math.tan(math.radians(10.0))
         self.LEO_MAX_GSL_LENGTH_M = math.sqrt(math.pow(LEO_SATELLITE_CONE_RADIUS_M, 2) + math.pow(LEO_ALTITUDE_M, 2))
         # ISLs are not allowed to dip below 80 km altitude
@@ -72,8 +74,7 @@ class MainHelperMultiLayer:
         )
         
         # MEO GSL and ISL ranges
-        # Using elevation angle of 5 degrees
-        MEO_SATELLITE_CONE_RADIUS_M = MEO_ALTITUDE_M / math.tan(math.radians(5.0))
+        MEO_SATELLITE_CONE_RADIUS_M = MEO_ALTITUDE_M / math.tan(math.radians(10.0))
         self.MEO_MAX_GSL_LENGTH_M = math.sqrt(math.pow(MEO_SATELLITE_CONE_RADIUS_M, 2) + math.pow(MEO_ALTITUDE_M, 2))
         self.MEO_MAX_ISL_LENGTH_M = 2 * math.sqrt(
             math.pow(EARTH_RADIUS + MEO_ALTITUDE_M, 2) - math.pow(EARTH_RADIUS + 80000, 2)
@@ -92,6 +93,8 @@ class MainHelperMultiLayer:
             self.MAX_CROSS_LAYER_ISL_LENGTH_M *= 1.2  
         else:
             self.MAX_CROSS_LAYER_ISL_LENGTH_M = MAX_CROSS_LAYER_ISL_LENGTH_M
+
+        self.MAX_LEO_PER_MEO_EXPLICIT = max_leo_per_meo
         
         # Use LEO GSL range for ground stations 
         self.MAX_GSL_LENGTH_M = self.LEO_MAX_GSL_LENGTH_M
@@ -116,6 +119,8 @@ class MainHelperMultiLayer:
 
         # Add base name to setting
         name = self.BASE_NAME + "_" + isl_selection + "_" + gs_selection + "_" + dynamic_state_algorithm
+        if self.MAX_LEO_PER_MEO_EXPLICIT is not None:
+            name += "_xlm%d" % int(self.MAX_LEO_PER_MEO_EXPLICIT)
 
         # Create output directories
         if not os.path.isdir(output_generated_data_dir):
@@ -244,7 +249,10 @@ class MainHelperMultiLayer:
             )
         elif isl_selection == "isls_plus_grid_with_cross_layer":
             # LEO ISLs + MEO ISLs + Cross-layer ISLs.
-            _max_leo_per_meo = max(40, (self.LEO_NUM_SATS + self.MEO_NUM_SATS - 1) // self.MEO_NUM_SATS)
+            if self.MAX_LEO_PER_MEO_EXPLICIT is not None:
+                _max_leo_per_meo = int(self.MAX_LEO_PER_MEO_EXPLICIT)
+            else:
+                _max_leo_per_meo = max(40, (self.LEO_NUM_SATS + self.MEO_NUM_SATS - 1) // self.MEO_NUM_SATS)
             satgen.generate_multilayer_isls(
                 output_generated_data_dir + "/" + name + "/isls.txt",
                 self.LEO_NUM_ORBS,

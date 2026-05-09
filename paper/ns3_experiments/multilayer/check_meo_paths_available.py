@@ -13,7 +13,7 @@ def check_meo_paths_available():
     
     base_dir = os.path.abspath(os.path.join(
         os.path.dirname(__file__),
-        '../../satellite_networks_state/gen_data/kuiper_630_meo_isls_plus_grid_with_cross_layer_ground_stations_top_100_algorithm_free_one_multi_layer/dynamic_state_1000ms_for_5s'
+        '../../satellite_networks_state/gen_data/kuiper_630_meo_isls_plus_grid_with_cross_layer_ground_stations_top_100_algorithm_free_one_multi_layer/dynamic_state_500ms_for_50s'
     ))
     
     if not os.path.exists(base_dir):

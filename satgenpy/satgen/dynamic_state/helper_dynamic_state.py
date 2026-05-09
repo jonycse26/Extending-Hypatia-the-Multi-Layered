@@ -47,7 +47,9 @@ def worker(args):
         max_isl_length_m,
         dynamic_state_algorithm,
         print_logs,
-        description_file_path
+        description_file_path,
+        meo_threshold_hops,
+        meo_threshold_distance_m,
      ) = args
 
     # Generate dynamic state
@@ -70,18 +72,25 @@ def worker(args):
                                   # "algorithm_paired_many_only_over_isls"
                                   # "algorithm_free_one_multi_layer"
         print_logs,
-        description_file_path
+        description_file_path,
+        meo_threshold_hops=meo_threshold_hops,
+        meo_threshold_distance_m=meo_threshold_distance_m,
     )
 
 
 def help_dynamic_state(
         output_generated_data_dir, num_threads, name, time_step_ms, duration_s,
-        max_gsl_length_m, max_isl_length_m, dynamic_state_algorithm, print_logs
+        max_gsl_length_m, max_isl_length_m, dynamic_state_algorithm, print_logs,
+        dynamic_state_dir_suffix="",
+        meo_threshold_hops=3,
+        meo_threshold_distance_m=10000000.0,
 ):
 
-    # Directory
-    output_dynamic_state_dir = output_generated_data_dir + "/" + name + "/dynamic_state_" + str(time_step_ms) \
-                               + "ms_for_" + str(duration_s) + "s"
+    # Directory (optional suffix for MEO threshold sensitivity, e.g. "_mh3_d10e6")
+    output_dynamic_state_dir = (
+        output_generated_data_dir + "/" + name + "/dynamic_state_" + str(time_step_ms)
+        + "ms_for_" + str(duration_s) + "s" + (dynamic_state_dir_suffix or "")
+    )
     if not os.path.isdir(output_dynamic_state_dir):
         os.makedirs(output_dynamic_state_dir)
 
@@ -159,7 +168,9 @@ def help_dynamic_state(
             max_isl_length_m,
             dynamic_state_algorithm,
             print_logs,
-            description_file_path
+            description_file_path,
+            meo_threshold_hops,
+            meo_threshold_distance_m,
         ))
 
         current += num_time_steps
