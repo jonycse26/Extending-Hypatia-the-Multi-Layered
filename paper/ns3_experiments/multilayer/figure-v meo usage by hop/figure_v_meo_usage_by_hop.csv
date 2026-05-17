@@ -1,0 +1,5 @@
+hop_count,n_snapshots,meo_usage_ratio,meo_usage_pct
+2,8,0.0,0.0
+3,18,0.0,0.0
+4,52,1.0,100.0
+5,124,1.0,100.0
