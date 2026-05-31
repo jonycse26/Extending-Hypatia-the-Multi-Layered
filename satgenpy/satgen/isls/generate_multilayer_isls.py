@@ -65,6 +65,7 @@ def generate_multilayer_isls(
         leo_num_sats,
         isl_shift=0,
         max_cross_layer_isl_length_m=None,
+        max_leo_per_meo=5,
         leo_altitude_m=630000.0,
         meo_altitude_m=10000000.0,
         leo_inclination_degree=51.9,
@@ -82,7 +83,8 @@ def generate_multilayer_isls(
     :param meo_n_sats_per_orbit:      Number of satellites per MEO orbit
     :param leo_num_sats:              Total number of LEO satellites (for MEO offset)
     :param isl_shift:                 ISL shift between orbits (for LEO and MEO grid links)
-    :param max_cross_layer_isl_length_m: Maximum distance for cross-layer ISLs (optional)
+    :param max_cross_layer_isl_length_m: Maximum distance for cross-layer ISLs (optional; reserved)
+    :param max_leo_per_meo:           Max LEO satellites connected to each MEO (orbit/slot mapping)
     :param leo_altitude_m:            LEO altitude for geometry checks
     :param meo_altitude_m:            MEO altitude for geometry checks
     :param leo_inclination_degree:    LEO inclination for geometry checks
@@ -119,55 +121,24 @@ def generate_multilayer_isls(
             list_isls.append((min(sat, sat_adjacent_orbit), max(sat, sat_adjacent_orbit)))
 
     # Generate cross-layer ISLs (LEO to MEO)
-    # Policy: each LEO connects to exactly one nearest MEO that
+    # Each LEO maps to one MEO by (orbit, slot) quantization; cap links per MEO with max_leo_per_meo.
     meo_n_sats = meo_n_orbits * meo_n_sats_per_orbit
+    leo_count_per_meo = {}
 
-    meo_positions = {}
-    for meo_i in range(meo_n_orbits):
-        for meo_j in range(meo_n_sats_per_orbit):
-            meo_sat = meo_idx_offset + meo_i * meo_n_sats_per_orbit + meo_j
-            meo_positions[meo_sat] = _walker_eci_position(
-                meo_i,
-                meo_j,
-                meo_n_orbits,
-                meo_n_sats_per_orbit,
-                meo_altitude_m,
-                meo_inclination_degree,
-                meo_phase_diff
-            )
-
-    for leo_sat in range(leo_num_sats):
-        leo_i = leo_sat // leo_n_sats_per_orbit
-        leo_j = leo_sat % leo_n_sats_per_orbit
-        leo_pos = _walker_eci_position(
-            leo_i,
-            leo_j,
-            leo_n_orbits,
-            leo_n_sats_per_orbit,
-            leo_altitude_m,
-            leo_inclination_degree,
-            leo_phase_diff
-        )
-
-        best_meo = None
-        best_dist = float("inf")
-        for meo_sat, meo_pos in meo_positions.items():
-            if not _segment_is_earth_clear(leo_pos, meo_pos, EARTH_RADIUS_M):
+    for leo_i in range(leo_n_orbits):
+        for leo_j in range(leo_n_sats_per_orbit):
+            leo_sat = leo_i * leo_n_sats_per_orbit + leo_j
+            if leo_sat >= leo_num_sats:
                 continue
-            d = _euclidean_distance(leo_pos, meo_pos)
-            if max_cross_layer_isl_length_m is not None and d > max_cross_layer_isl_length_m:
+            meo_orbit_idx = (leo_i * meo_n_orbits) // leo_n_orbits
+            meo_sat_idx = (leo_j * meo_n_sats_per_orbit) // leo_n_sats_per_orbit
+            meo_sat = meo_idx_offset + meo_orbit_idx * meo_n_sats_per_orbit + meo_sat_idx
+            if meo_sat >= leo_num_sats + meo_n_sats:
                 continue
-            if d < best_dist:
-                best_dist = d
-                best_meo = meo_sat
-
-        if best_meo is not None:
-            list_isls.append((min(leo_sat, best_meo), max(leo_sat, best_meo)))
-        else:
-            raise ValueError(
-                "No Earth-clear MEO candidate found for LEO sat %d; "
-                "cannot satisfy one-LEO-to-one-MEO policy." % leo_sat
-            )
+            n = leo_count_per_meo.get(meo_sat, 0)
+            if n < max_leo_per_meo:
+                list_isls.append((min(leo_sat, meo_sat), max(leo_sat, meo_sat)))
+                leo_count_per_meo[meo_sat] = n + 1
 
     # Remove duplicates and sort
     list_isls = list(set(list_isls))

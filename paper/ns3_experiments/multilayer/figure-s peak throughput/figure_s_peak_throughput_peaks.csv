@@ -1,4 +1,0 @@
-description,run_leo_only,run_multilayer,peak_throughput_mbps_leo_only,peak_throughput_mbps_multilayer,nominal_cap_mbps_leo_only,nominal_cap_mbps_multilayer
-Mumbai to Lima,leo_only_1160_to_1185_tcp,multilayer_1196_to_1221_tcp,9.317760,11.338080,10.000000,10.000000
-Lima to Karachi,leo_only_1185_to_1167_tcp,multilayer_1221_to_1203_tcp,9.626880,10.918560,10.000000,10.000000
-Tokyo to Buenos-Aires,leo_only_1156_to_1168_tcp,multilayer_1192_to_1204_tcp,8.898240,5.829120,10.000000,10.000000

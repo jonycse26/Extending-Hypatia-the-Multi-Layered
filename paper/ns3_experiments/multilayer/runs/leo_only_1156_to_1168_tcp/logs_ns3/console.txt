@@ -1,10 +1,10 @@
 Waf: Entering directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Waf: Leaving directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Build commands will be stored in build/debug_all/compile_commands.json
-'build' finished successfully (3.118s)
+'build' finished successfully (4.269s)
 BASIC SIMULATION START
-  > Date... Saturday April 25, 2026
-  > Time... 20:15:04
+  > Date... Saturday May 16, 2026
+  > Time... 22:57:09
 
 CONFIGURE RUN DIRECTORY
   > Run directory: ../../paper/ns3_experiments/multilayer/runs/leo_only_1156_to_1168_tcp
@@ -22,8 +22,8 @@ isl_data_rate_megabit_per_s               10.0
 isl_max_queue_size_pkts                   100
 isl_utilization_tracking_interval_ns      1000000000
 satellite_network_dir                     ../../../../satellite_networks_state/gen_data/kuiper_630_isls_plus_grid_ground_stations_top_100_algorithm_free_one_only_over_isls
-satellite_network_routes_dir              ../../../../satellite_networks_state/gen_data/kuiper_630_isls_plus_grid_ground_stations_top_100_algorithm_free_one_only_over_isls/dynamic_state_1000ms_for_25s
-simulation_end_time_ns                    25000000000
+satellite_network_routes_dir              ../../../../satellite_networks_state/gen_data/kuiper_630_isls_plus_grid_ground_stations_top_100_algorithm_free_one_only_over_isls/dynamic_state_1000ms_for_50s
+simulation_end_time_ns                    50000000000
 simulation_seed                           123456789
 tcp_flow_enable_logging_for_tcp_flow_ids  set(0)
 tcp_flow_schedule_filename                schedule.csv
@@ -34,7 +34,7 @@ CONFIGURE SIMULATION
   > System id........ 0
   > No. of systems... 1
   > Seed............. 123456789
-  > Duration......... 25.00 s (25000000000 ns)
+  > Duration......... 50.00 s (50000000000 ns)
 
 TCP OPTIMIZATION BASIC
   > Clock granularity.......... 1 ns
@@ -66,16 +66,16 @@ SATELLITE NETWORK
     >> Assigning IP addresses...
        (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)
        Progress (as there are more entries, it becomes slower):
-       - 10.03% (t = 0.15 s, update took 0.15 s)
-       - 20.06% (t = 0.29 s, update took 0.14 s)
-       - 30.10% (t = 0.45 s, update took 0.16 s)
-       - 40.13% (t = 0.63 s, update took 0.18 s)
-       - 50.16% (t = 0.81 s, update took 0.18 s)
-       - 60.19% (t = 0.99 s, update took 0.18 s)
-       - 70.22% (t = 1.16 s, update took 0.18 s)
-       - 80.25% (t = 1.35 s, update took 0.18 s)
-       - 90.29% (t = 1.51 s, update took 0.17 s)
-       - 100.00% (t = 1.68 s, update took 0.17 s)
+       - 10.03% (t = 0.27 s, update took 0.27 s)
+       - 20.06% (t = 0.57 s, update took 0.30 s)
+       - 30.10% (t = 0.84 s, update took 0.27 s)
+       - 40.13% (t = 1.10 s, update took 0.26 s)
+       - 50.16% (t = 1.43 s, update took 0.33 s)
+       - 60.19% (t = 1.68 s, update took 0.25 s)
+       - 70.22% (t = 1.94 s, update took 0.26 s)
+       - 80.25% (t = 2.28 s, update took 0.34 s)
+       - 90.29% (t = 2.68 s, update took 0.40 s)
+       - 100.00% (t = 2.81 s, update took 0.13 s)
     >> Finished assigning IPs
     >> Removing traffic control layers (qdiscs)...
     >> Finished removing GSL queueing disciplines
@@ -106,25 +106,35 @@ PINGMESH SCHEDULER
   > Not enabled explicitly, so disabled
 
 SIMULATION
-Running the simulation for 25.00 simulation seconds...
-10.23% - Simulation Time = 2.56 s ::: Wallclock Time = 13.22 s
-Estimated wallclock time remaining: 1 minutes 56 seconds
-19.52% - Simulation Time = 4.88 s ::: Wallclock Time = 23.63 s
-Estimated wallclock time remaining: 1 minutes 37 seconds
-29.69% - Simulation Time = 7.42 s ::: Wallclock Time = 36.83 s
-Estimated wallclock time remaining: 1 minutes 27 seconds
-41.37% - Simulation Time = 10.34 s ::: Wallclock Time = 47.93 s
-Estimated wallclock time remaining: 1 minutes 7 seconds
-51.78% - Simulation Time = 12.95 s ::: Wallclock Time = 59.95 s
-Estimated wallclock time remaining: 55 seconds
-65.15% - Simulation Time = 16.29 s ::: Wallclock Time = 80.27 s
-Estimated wallclock time remaining: 42 seconds
-81.35% - Simulation Time = 20.34 s ::: Wallclock Time = 103.42 s
-Estimated wallclock time remaining: 23 seconds
-96.90% - Simulation Time = 24.23 s ::: Wallclock Time = 129.53 s
-Estimated wallclock time remaining: 4 seconds
+Running the simulation for 50.00 simulation seconds...
+ 5.07% - Simulation Time = 2.54 s ::: Wallclock Time = 13.74 s
+Estimated wallclock time remaining: 4 minutes 17 seconds
+10.35% - Simulation Time = 5.18 s ::: Wallclock Time = 24.77 s
+Estimated wallclock time remaining: 3 minutes 34 seconds
+16.51% - Simulation Time = 8.25 s ::: Wallclock Time = 36.55 s
+Estimated wallclock time remaining: 3 minutes 4 seconds
+21.98% - Simulation Time = 10.99 s ::: Wallclock Time = 48.27 s
+Estimated wallclock time remaining: 2 minutes 51 seconds
+26.54% - Simulation Time = 13.27 s ::: Wallclock Time = 60.19 s
+Estimated wallclock time remaining: 2 minutes 46 seconds
+35.25% - Simulation Time = 17.62 s ::: Wallclock Time = 82.68 s
+Estimated wallclock time remaining: 2 minutes 31 seconds
+43.66% - Simulation Time = 21.83 s ::: Wallclock Time = 105.45 s
+Estimated wallclock time remaining: 2 minutes 16 seconds
+51.83% - Simulation Time = 25.91 s ::: Wallclock Time = 131.73 s
+Estimated wallclock time remaining: 2 minutes 2 seconds
+57.98% - Simulation Time = 28.99 s ::: Wallclock Time = 155.36 s
+63.84% - Simulation Time = 31.92 s ::: Wallclock Time = 181.24 s
+69.40% - Simulation Time = 34.70 s ::: Wallclock Time = 202.87 s
+Estimated wallclock time remaining: 1 minutes 29 seconds
+74.83% - Simulation Time = 37.42 s ::: Wallclock Time = 223.13 s
+80.16% - Simulation Time = 40.08 s ::: Wallclock Time = 243.74 s
+86.71% - Simulation Time = 43.35 s ::: Wallclock Time = 266.77 s
+93.19% - Simulation Time = 46.59 s ::: Wallclock Time = 290.14 s
+98.29% - Simulation Time = 49.15 s ::: Wallclock Time = 313.02 s
+Estimated wallclock time remaining: 5 seconds
 Finished simulation.
-Simulation of 25.0 seconds took in wallclock time 136.1 seconds.
+Simulation of 50.0 seconds took in wallclock time 319.6 seconds.
 
 STORE TCP FLOW RESULTS
   > Opening TCP flow log files:
@@ -152,20 +162,20 @@ TIMING RESULTS
 [    0.0 -     0.0] (0.0 s) :: Configure run and logs directory
 [    0.0 -     0.0] (0.0 s) :: Configure simulator
 [    0.0 -     0.0] (0.0 s) :: Setup TCP parameters
-[    0.0 -    11.2] (11.2 s) :: Create initial single forwarding state
-[   11.2 -    40.0] (28.8 s) :: Setup routing arbiter on each node
-[   40.0 -    41.7] (1.7 s) :: Create initial single forwarding state
-[   41.7 -    41.8] (0.0 s) :: Set first GSL interface bandwidth
-[   41.8 -    41.8] (0.0 s) :: Read flow schedule
-[   41.8 -    41.8] (0.0 s) :: Remove previous flow log files
-[   41.8 -    41.8] (0.0 s) :: Setup TCP flow sinks
-[   41.8 -    41.8] (0.0 s) :: Setup traffic TCP flow starter
-[   41.8 -    41.8] (0.0 s) :: Whatever is between previous timestamp and the simulation run
-[   41.8 -   177.9] (136.1 s) :: Run simulation
-[  177.9 -   177.9] (0.0 s) :: Write TCP flow log files
-[  177.9 -   178.4] (0.5 s) :: Destroy simulator
+[    0.0 -    16.6] (16.6 s) :: Create initial single forwarding state
+[   16.6 -    47.5] (30.9 s) :: Setup routing arbiter on each node
+[   47.5 -    50.1] (2.5 s) :: Create initial single forwarding state
+[   50.1 -    50.1] (0.0 s) :: Set first GSL interface bandwidth
+[   50.1 -    50.1] (0.0 s) :: Read flow schedule
+[   50.1 -    50.1] (0.0 s) :: Remove previous flow log files
+[   50.1 -    50.1] (0.0 s) :: Setup TCP flow sinks
+[   50.1 -    50.1] (0.0 s) :: Setup traffic TCP flow starter
+[   50.1 -    50.1] (0.0 s) :: Whatever is between previous timestamp and the simulation run
+[   50.1 -   369.7] (319.6 s) :: Run simulation
+[  369.7 -   369.7] (0.0 s) :: Write TCP flow log files
+[  369.7 -   370.1] (0.4 s) :: Destroy simulator
 
 BASIC SIMULATION END
-  > Date... Saturday April 25, 2026
-  > Time... 20:18:02
+  > Date... Saturday May 16, 2026
+  > Time... 23:03:19
 

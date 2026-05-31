@@ -1,10 +1,10 @@
 Waf: Entering directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Waf: Leaving directory `/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all'
 Build commands will be stored in build/debug_all/compile_commands.json
-'build' finished successfully (3.361s)
+'build' finished successfully (1.931s)
 BASIC SIMULATION START
-  > Date... Saturday April 25, 2026
-  > Time... 20:18:18
+  > Date... Sunday May 17, 2026
+  > Time... 14:29:35
 
 CONFIGURE RUN DIRECTORY
   > Run directory: ../../paper/ns3_experiments/multilayer/runs/example3_distance_medium_1206_to_1288_tcp
@@ -66,16 +66,16 @@ SATELLITE NETWORK
     >> Assigning IP addresses...
        (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)
        Progress (as there are more entries, it becomes slower):
-       - 10.06% (t = 0.21 s, update took 0.21 s)
-       - 20.12% (t = 0.43 s, update took 0.22 s)
-       - 30.19% (t = 0.65 s, update took 0.22 s)
-       - 40.25% (t = 0.88 s, update took 0.24 s)
-       - 50.31% (t = 1.11 s, update took 0.23 s)
-       - 60.37% (t = 1.37 s, update took 0.26 s)
-       - 70.43% (t = 1.63 s, update took 0.26 s)
-       - 80.50% (t = 1.88 s, update took 0.26 s)
-       - 90.56% (t = 2.13 s, update took 0.25 s)
-       - 100.00% (t = 2.38 s, update took 0.25 s)
+       - 10.06% (t = 0.11 s, update took 0.11 s)
+       - 20.12% (t = 0.23 s, update took 0.12 s)
+       - 30.19% (t = 0.35 s, update took 0.12 s)
+       - 40.25% (t = 0.48 s, update took 0.13 s)
+       - 50.31% (t = 0.62 s, update took 0.14 s)
+       - 60.37% (t = 0.74 s, update took 0.12 s)
+       - 70.43% (t = 0.86 s, update took 0.13 s)
+       - 80.50% (t = 1.00 s, update took 0.14 s)
+       - 90.56% (t = 1.16 s, update took 0.16 s)
+       - 100.00% (t = 1.33 s, update took 0.17 s)
     >> Finished assigning IPs
     >> Removing traffic control layers (qdiscs)...
     >> Finished removing GSL queueing disciplines
@@ -87,75 +87,6 @@ SETUP SINGLE FORWARDING ROUTING
   > Setting the routing arbiter on each node
   > Forward state update interval: 1000000000ns
   > Perform first forwarding state load for t=0
-
-SETUP GSL IF BANDWIDTH HELPER
-  > GSL interface bandwidth update interval: 1000000000ns
-  > Perform first GSL interface bandwidth setting for t=0
-
-TCP FLOW SCHEDULER
-  > TCP flow scheduler is enabled
-  > Read schedule (total flow start events: 1)
-  > Removed previous flow log files if present
-  > Setting up TCP flow sinks
-  > Setting up traffic TCP flow starter
-
-UDP BURST SCHEDULER
-  > Not enabled explicitly, so disabled
-
-PINGMESH SCHEDULER
-  > Not enabled explicitly, so disabled
-
-SIMULATION
-Running the simulation for 25.00 simulation seconds...
-27.94% - Simulation Time = 6.99 s ::: Wallclock Time = 10.09 s
-Estimated wallclock time remaining: 26 seconds
-53.33% - Simulation Time = 13.33 s ::: Wallclock Time = 20.85 s
-Estimated wallclock time remaining: 18 seconds
-77.92% - Simulation Time = 19.48 s ::: Wallclock Time = 31.01 s
-Estimated wallclock time remaining: 8 seconds
-Finished simulation.
-Simulation of 25.0 seconds took in wallclock time 42.1 seconds.
-
-STORE TCP FLOW RESULTS
-  > Opening TCP flow log files:
-    >> Opened: ../../paper/ns3_experiments/multilayer/runs/example3_distance_medium_1206_to_1288_tcp/logs_ns3/tcp_flows.csv
-    >> Opened: ../../paper/ns3_experiments/multilayer/runs/example3_distance_medium_1206_to_1288_tcp/logs_ns3/tcp_flows.txt
-  > Writing tcp_flows.txt header
-  > Writing log files line-by-line
-  > Total TCP flow log entries to write... 1
-  > Closing TCP flow log files:
-    >> Closed: ../../paper/ns3_experiments/multilayer/runs/example3_distance_medium_1206_to_1288_tcp/logs_ns3/tcp_flows.csv
-    >> Closed: ../../paper/ns3_experiments/multilayer/runs/example3_distance_medium_1206_to_1288_tcp/logs_ns3/tcp_flows.txt
-  > TCP flow log files have been written
-
-STORE UDP BURST RESULTS
-  > Not enabled, so no UDP burst results are written
-
-STORE PINGMESH RESULTS
-  > Not enabled, so no pingmesh results are written
-
-CLEAN-UP
-  > Simulator is destroyed
-
-TIMING RESULTS
-------
-[    0.0 -     0.0] (0.0 s) :: Configure run and logs directory
-[    0.0 -     0.0] (0.0 s) :: Configure simulator
-[    0.0 -     0.0] (0.0 s) :: Setup TCP parameters
-[    0.0 -    17.2] (17.1 s) :: Create initial single forwarding state
-[   17.2 -    61.0] (43.8 s) :: Setup routing arbiter on each node
-[   61.0 -    63.4] (2.4 s) :: Create initial single forwarding state
-[   63.4 -    63.4] (0.0 s) :: Set first GSL interface bandwidth
-[   63.4 -    63.4] (0.0 s) :: Read flow schedule
-[   63.4 -    63.4] (0.0 s) :: Remove previous flow log files
-[   63.4 -    63.5] (0.0 s) :: Setup TCP flow sinks
-[   63.5 -    63.5] (0.0 s) :: Setup traffic TCP flow starter
-[   63.5 -    63.5] (0.0 s) :: Whatever is between previous timestamp and the simulation run
-[   63.5 -   105.6] (42.1 s) :: Run simulation
-[  105.6 -   105.6] (0.0 s) :: Write TCP flow log files
-[  105.6 -   106.3] (0.7 s) :: Destroy simulator
-
-BASIC SIMULATION END
-  > Date... Saturday April 25, 2026
-  > Time... 20:20:04
-
+aborted. cond="other_device->GetNode()->GetId() != next_hop_node_id", msg="Next hop node id across does not match", file=../../contrib/satellite-network/helper/arbiter-single-forward-helper.cc, line=140
+terminate called without an active exception
+Command ['/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/ns3-sat-sim/simulator/build/debug_all/scratch/main_satnet/main_satnet', '--run_dir=../../paper/ns3_experiments/multilayer/runs/example3_distance_medium_1206_to_1288_tcp'] terminated with signal SIGIOT. Run it under a debugger to get more information (./waf --run <program> --gdb").

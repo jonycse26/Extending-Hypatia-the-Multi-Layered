@@ -1,4 +1,0 @@
-pair,run_name,rtt_variation_ms,rtt_variation_ratio,rtt_stretch,source_file
-Mumbai to Lima,multilayer_1196_to_1221_tcp,43.42136900000003,1.0729770907563025,1.0384174973037068,/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/paper/ns3_experiments/multilayer/multilayer_all_experiments_metrics.csv
-Lima to Karachi,multilayer_1221_to_1203_tcp,41.474335999999994,1.0694712495812395,1.035209995951126,/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/paper/ns3_experiments/multilayer/multilayer_all_experiments_metrics.csv
-Tokyo to Buenos-Aires,multilayer_1192_to_1204_tcp,40.920191000000045,1.0631484429012346,1.0304492094668414,/home/jonz/ns-allinone-3.35/ns-3.35/hypatia/paper/ns3_experiments/multilayer/multilayer_all_experiments_metrics.csv

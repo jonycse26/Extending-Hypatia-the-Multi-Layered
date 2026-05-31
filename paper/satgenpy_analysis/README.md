@@ -1,17 +1,31 @@
-# Satgenpy analysis
+# Constellation analysis with satgenpy
 
-Given that you have generated the satellite network state data over time in `satellite_networks_state`,
-here you can there is an analysis of the constellations, for it both as a whole, as well as for a
-few particular pairs.
+Offline analysis of forwarding-state time series produced in
+`paper/satellite_networks_state/`. Computes path, RTT, and hop statistics for
+Kuiper, Starlink, and Telesat scenarios used in the paper.
 
+It builds upon:
+
+* `satgenpy` : Constellation generation and routing (see `satgenpy/README.md`)
+
+  Located at: `satgenpy/`
 
 ## Getting started
 
-1. Make sure you have all dependencies installed as prescribed in `<hypatia>/satgenpy/README.md`
-
-2. Perform the full analysis (takes some time):
+1. Install dependencies (same as satgenpy):
    ```
+   See satgenpy/README.md
+   ```
+
+2. Generate satellite network state first:
+   ```
+   See paper/satellite_networks_state/README.md
+   ```
+
+3. Run the full analysis (can take a long time):
+   ```
+   cd paper/satgenpy_analysis
    python perform_full_analysis.py
    ```
 
-3. The analysis for each constellation is now in `data/<satellite network name>`
+4. Results are written under `paper/satgenpy_analysis/data/<constellation name>/`.

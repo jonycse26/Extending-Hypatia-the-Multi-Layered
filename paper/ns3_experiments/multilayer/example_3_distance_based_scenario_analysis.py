@@ -6,7 +6,7 @@ What this experiment highlights
 -------------------------------
 How end-to-end TCP performance and MEO usage differ across **three geographic distance
 tiers** on the same multilayer constellation, using the **default** forwarding state
-(``dynamic_state_500ms_for_50s`` from step_0 — no ``meo_threshold_distance_m`` sweep).
+(``dynamic_state_<ms>_for_<s>`` from step_0 / ``run_list`` — no ``meo_threshold_distance_m`` sweep).
 
 Pairs (multilayer node IDs, README-aligned):
   • **Short** (~2,800 km): Manila → Dalian
@@ -63,12 +63,15 @@ sys.path.insert(0, _MULTILAYER_DIR)
 try:
     from run_list import (
         dynamic_state,
+        dynamic_state_update_interval_ms,
         dynamic_state_update_interval_ns,
         experiment3_distance_tiers,
         experiment3_pairs_multilayer,
+        get_experiment3_distance_based_scenario_run_list,
         isl_utilization_tracking_interval_ns,
         multilayer_satellite_network,
         simulation_end_time_ns,
+        simulation_end_time_s,
     )
 except ImportError:
     print("Error: Could not import run_list. Run from the multilayer directory.")
@@ -83,8 +86,10 @@ except ImportError as e:
 local_shell = exputil.LocalShell()
 
 
-def create_ns3_run(from_id, to_id, tier_slug):
+def create_ns3_run(from_id, to_id, tier_slug, satellite_network=None):
     """Run folder example3_distance_short_1209_to_1277_tcp."""
+    if satellite_network is None:
+        satellite_network = multilayer_satellite_network
     run_name = "example3_distance_%s_%d_to_%d_tcp" % (tier_slug, from_id, to_id)
     run_dir = "runs/" + run_name
     local_shell.remove_force_recursive(run_dir)
@@ -96,7 +101,7 @@ def create_ns3_run(from_id, to_id, tier_slug):
         run_dir + "/config_ns3.properties",
     )
     local_shell.sed_replace_in_file_plain(
-        run_dir + "/config_ns3.properties", "[SATELLITE-NETWORK]", multilayer_satellite_network
+        run_dir + "/config_ns3.properties", "[SATELLITE-NETWORK]", satellite_network
     )
     local_shell.sed_replace_in_file_plain(
         run_dir + "/config_ns3.properties", "[DYNAMIC-STATE]", dynamic_state
@@ -195,7 +200,7 @@ def parse_example3_run_name(run_name):
     }
 
 
-def collect_metrics_from_existing_runs():
+def collect_metrics_from_existing_runs(metrics_duration_s=None, metrics_time_step_ms=None):
     pattern = os.path.join(_MULTILAYER_DIR, "runs", "example3_distance_*_tcp")
     paths = sorted(glob.glob(pattern))
     rows = []
@@ -208,7 +213,11 @@ def collect_metrics_from_existing_runs():
         from_id = parsed["from_id"]
         to_id = parsed["to_id"]
         pair_desc = _pair_desc_for_ids(from_id, to_id)
-        met = extract_metrics(p)
+        met = extract_metrics(
+            p,
+            metrics_duration_s=metrics_duration_s,
+            metrics_time_step_ms=metrics_time_step_ms,
+        )
         if met.get("error"):
             print("  Skip %s: %s" % (run_name, met["error"]))
             continue
@@ -269,12 +278,31 @@ def main():
         action="store_true",
         help="Scan runs/example3_distance_* and write CSV only",
     )
+    parser.add_argument(
+        "--duration-s",
+        type=float,
+        default=float(simulation_end_time_s),
+        help="Metrics window and fstate duration (default: run_list.simulation_end_time_s).",
+    )
+    parser.add_argument(
+        "--time-step-ms",
+        type=int,
+        default=int(dynamic_state_update_interval_ms),
+        help="fstate time step for path metrics (default: run_list.dynamic_state_update_interval_ms).",
+    )
     args = parser.parse_args()
 
     os.chdir(_MULTILAYER_DIR)
 
     if args.export_csv_from_runs:
-        rows = collect_metrics_from_existing_runs()
+        print(
+            "Export metrics: duration_s=%.0f, time_step_ms=%d → dynamic_state_%dms_for_%.0fs"
+            % (args.duration_s, args.time_step_ms, args.time_step_ms, args.duration_s)
+        )
+        rows = collect_metrics_from_existing_runs(
+            metrics_duration_s=args.duration_s,
+            metrics_time_step_ms=args.time_step_ms,
+        )
         export_results_csv(rows, args.csv_out)
         if args.with_plots and rows:
             print("Generating TCP flow plots (--with-plots)...")
@@ -291,21 +319,34 @@ def main():
     print("Example 3: Distance-based scenario analysis")
     print("=" * 70)
     print()
-    print("Routing: default multilayer dynamic state (%s)" % dynamic_state)
+    print("Routing: dynamic state %s (%d s, %d ms updates)" % (
+        dynamic_state,
+        simulation_end_time_ns // (1000 * 1000 * 1000),
+        dynamic_state_update_interval_ns // (1000 * 1000),
+    ))
     print()
-    for tier, (from_id, to_id, desc) in zip(experiment3_distance_tiers, experiment3_pairs_multilayer):
-        print("  [%s] %s (%d → %d)" % (tier, desc, from_id, to_id))
+    for spec in get_experiment3_distance_based_scenario_run_list():
+        print("  [%s] %s (%d → %d)" % (
+            spec["distance_tier"],
+            spec["description"],
+            spec["from_id"],
+            spec["to_id"],
+        ))
     print()
 
     results = []
 
-    for tier, (from_id, to_id, pair_desc) in zip(
-        experiment3_distance_tiers, experiment3_pairs_multilayer
-    ):
+    for spec in get_experiment3_distance_based_scenario_run_list():
+        tier = spec["distance_tier"]
+        from_id = spec["from_id"]
+        to_id = spec["to_id"]
+        pair_desc = spec["description"]
         print("-" * 70)
         print("Tier: %s  |  %s" % (tier, pair_desc))
         print("-" * 70)
-        run_name, run_dir = create_ns3_run(from_id, to_id, tier)
+        run_name, run_dir = create_ns3_run(
+            from_id, to_id, tier, satellite_network=spec["satellite_network"]
+        )
         print("  Created: runs/%s" % run_name)
 
         metrics = {
@@ -329,7 +370,11 @@ def main():
                 print("  ERROR: ns-3 failed: %s" % e)
                 return 1
 
-            metrics = extract_metrics(run_dir)
+            metrics = extract_metrics(
+                run_dir,
+                metrics_duration_s=args.duration_s,
+                metrics_time_step_ms=args.time_step_ms,
+            )
             if metrics.get("error"):
                 print("  WARNING: metrics: %s" % metrics["error"])
             else:

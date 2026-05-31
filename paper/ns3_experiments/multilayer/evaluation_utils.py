@@ -276,8 +276,27 @@ def run_plot_tcp_flow(run_name, multilayer_dir=None, tcp_flow_id=None):
         except Exception:
             pass
 
-        if os.path.isfile(cwnd_file) and os.path.getsize(cwnd_file) > 0:
-            # Input: [flow_id,time_ns,cwnd_packets] -> Output: [time_ns,cwnd_packets]
+        if os.path.isfile(rtt_file) and os.path.getsize(rtt_file) > 0:
+            _MSS = 1380.0
+            _BPS = 10.0e6 / 8.0
+            _Q = 100.0
+            with open(rtt_file, "r") as f_in, open(bdp_plus_q_out, "w") as f_out:
+                for line in f_in:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    parts = line.split(",")
+                    if len(parts) < 3:
+                        continue
+                    try:
+                        t_ns = float(parts[1])
+                        rtt_ns = float(parts[2])
+                        bdp_q = (rtt_ns / 1e9) * _BPS / _MSS + _Q
+                    except ValueError:
+                        continue
+                    f_out.write("%.0f,%.10f\n" % (t_ns, bdp_q))
+        elif os.path.isfile(cwnd_file) and os.path.getsize(cwnd_file) > 0:
+            # Fallback only when RTT is unavailable (legacy proxy).
             with open(cwnd_file, "r") as f_in, open(bdp_plus_q_out, "w") as f_out:
                 for line in f_in:
                     line = line.strip()
@@ -288,7 +307,8 @@ def run_plot_tcp_flow(run_name, multilayer_dir=None, tcp_flow_id=None):
                         continue
                     try:
                         t_ns = float(parts[1])
-                        cwnd_pkts = float(parts[2])
+                        cwnd_bytes = float(parts[2])
+                        cwnd_pkts = cwnd_bytes / 1380.0 if cwnd_bytes > 5000.0 else cwnd_bytes
                     except ValueError:
                         continue
                     f_out.write("%.0f,%.10f\n" % (t_ns, cwnd_pkts))
@@ -316,7 +336,7 @@ def run_plot_tcp_flow(run_name, multilayer_dir=None, tcp_flow_id=None):
                     plt.figure(figsize=(7.5, 4.5))
                     plt.plot(xs, ys, lw=2)
                     plt.xlabel("Time (s)")
-                    plt.ylabel("BDP+Q (packets) [proxy = cwnd]")
+                    plt.ylabel("BDP+Q (packets)")
                     plt.grid(True, alpha=0.3)
                     plt.tight_layout()
                     plt.savefig(os.path.join(pdf_dir, "plot_bdp_plus_q_packets_ts.pdf"))
@@ -376,6 +396,25 @@ def _resolve_run_dir(run_dir, multilayer_dir=None):
     if os.path.isabs(run_dir):
         return run_dir
     return os.path.normpath(os.path.join(base, run_dir))
+
+
+def _run_dir_candidates(run_name, multilayer_dir=None):
+    """``runs/`` and ``data/`` subdirs under the multilayer experiment root."""
+    if os.path.isabs(run_name) and os.path.isdir(run_name):
+        return [run_name]
+    base = multilayer_dir or MULTILAYER_DIR
+    return [
+        os.path.join(base, "runs", run_name),
+        os.path.join(base, "data", run_name),
+        os.path.join(base, run_name),
+    ]
+
+
+def _resolve_first_existing_run_dir(run_name, multilayer_dir=None):
+    for rd in _run_dir_candidates(run_name, multilayer_dir):
+        if os.path.isdir(rd):
+            return rd
+    return _resolve_run_dir(run_name, multilayer_dir)
 
 
 def _read_schedule_max_bytes(run_dir, multilayer_dir=None):
@@ -529,17 +568,43 @@ def _load_schedule_from_to(run_dir):
     return None, None
 
 
-def _resolve_dynamic_state_dir_from_config(resolved_run_dir):
+def _resolve_dynamic_state_dir_from_config(
+    resolved_run_dir, metrics_duration_s=None, metrics_time_step_ms=None
+):
     """
-    Resolve satellite_network_routes_dir from config_ns3.properties into an absolute directory.
+    Resolve forwarding-state directory (``fstate_*.txt``) for a run.
+
+    When ``metrics_duration_s`` and ``metrics_time_step_ms`` are set, use
+    ``dynamic_state_<ms>ms_for_<s>s`` under ``satellite_network_dir`` so metrics match a
+    chosen window even if ``config_ns3.properties`` points at another duration.
     """
     cfg_path = os.path.join(resolved_run_dir, "config_ns3.properties")
     props = _parse_kv_properties(cfg_path)
+    if metrics_duration_s is not None and metrics_time_step_ms is not None:
+        satnet_rel = props.get("satellite_network_dir")
+        if satnet_rel:
+            ds_name = "dynamic_state_%dms_for_%ds" % (
+                int(metrics_time_step_ms),
+                int(metrics_duration_s),
+            )
+            return os.path.normpath(
+                os.path.join(resolved_run_dir, satnet_rel, ds_name)
+            )
     routes_dir_rel = props.get("satellite_network_routes_dir")
     if not routes_dir_rel:
         return None
-    # config values are relative to the run directory
     return os.path.normpath(os.path.join(resolved_run_dir, routes_dir_rel))
+
+
+def _metrics_end_time_ns(resolved_run_dir, metrics_duration_s=None):
+    """Inclusive upper bound (ns) for log/fstate samples when clipping metrics."""
+    if metrics_duration_s is None:
+        return _read_sim_end_time_ns(resolved_run_dir)
+    config_end = _read_sim_end_time_ns(resolved_run_dir)
+    clip_end = int(float(metrics_duration_s) * 1e9)
+    if config_end > 0:
+        return min(config_end, clip_end)
+    return clip_end
 
 
 def _read_sim_end_time_ns(resolved_run_dir):
@@ -592,6 +657,9 @@ def _reconstruct_paths_from_fstate(fstate_files_in_time_order, from_id, to_id, l
 
     Returns list of dicts:
       {time_ns, valid, path_nodes, hop_count, meo_sat_count, meo_usage_ratio, signature}
+
+    Per-snapshot ``meo_usage_ratio`` is 1.0 if the path includes ≥1 MEO satellite, else 0.0.
+    Run-level ``meo_usage_ratio`` in ``_extract_path_based_metrics`` is N_MEO/N over valid snapshots.
     """
     next_map = {}  # src_id -> next_hop_id for a fixed destination to_id
     results = []
@@ -642,10 +710,7 @@ def _reconstruct_paths_from_fstate(fstate_files_in_time_order, from_id, to_id, l
             hop_count_int = len([n for n in path_nodes if isinstance(n, int) and n < total_sats])
             meo_sat_count = len([n for n in path_nodes if isinstance(n, int) and leo_num_sats is not None and leo_num_sats <= n < total_sats])
             hop_count = hop_count_int
-            if hop_count_int > 0:
-                meo_usage_ratio = float(meo_sat_count) / float(hop_count_int)
-            else:
-                meo_usage_ratio = 0.0
+            meo_usage_ratio = 1.0 if meo_sat_count >= 1 else 0.0
             signature = tuple([n for n in path_nodes if isinstance(n, int) and n < total_sats])
 
         results.append(
@@ -716,29 +781,25 @@ def _compute_bottleneck_utilization(paths, isl_util_dict):
     return sum(vals) / len(vals)
 
 
-def _extract_path_based_metrics(run_dir, resolved_run_dir):
+def _fstate_merged_paths(
+    resolved_run_dir, metrics_duration_s=None, metrics_time_step_ms=None
+):
     """
-    Compute path-based metrics (hop count, MEO usage ratio, stability, stretch, bottleneck util)
-    by reconstructing forwarding paths from fstate_*.txt.
-
-    These metrics are approximations for end-to-end behavior:
-      - forwarding paths are reconstructed at each dynamic snapshot (simulation update interval)
-      - stability uses whether the satellite-only path signature changes between consecutive snapshots
-      - stretch is computed as hop_count / min_hop_count_over_snapshots for that (from,to)
-      - bottleneck utilization is computed from isl_utilization.csv aggregated over the run
+    Reconstruct end-to-end forwarding paths at each fstate snapshot, or None if unavailable.
     """
     from_id, to_id = _load_schedule_from_to(resolved_run_dir)
     if from_id is None or to_id is None:
-        return {}
+        return None
 
-    dynamic_state_dir = _resolve_dynamic_state_dir_from_config(resolved_run_dir)
+    dynamic_state_dir = _resolve_dynamic_state_dir_from_config(
+        resolved_run_dir, metrics_duration_s, metrics_time_step_ms
+    )
     if not dynamic_state_dir or not os.path.isdir(dynamic_state_dir):
-        return {}
+        return None
 
-    sim_end_time_ns = _read_sim_end_time_ns(resolved_run_dir)
+    sim_end_time_ns = _metrics_end_time_ns(resolved_run_dir, metrics_duration_s)
     leo_num_sats, total_sats, meo_min, meo_max = _get_satellite_counts_from_config(resolved_run_dir)
 
-    # Collect fstate snapshots in time order (fstate files are deltas).
     fstate_files = []
     for fp in glob.glob(os.path.join(dynamic_state_dir, "fstate_*.txt")):
         base = os.path.basename(fp)
@@ -750,11 +811,166 @@ def _extract_path_based_metrics(run_dir, resolved_run_dir):
             fstate_files.append((t_ns, fp))
     fstate_files.sort(key=lambda x: x[0])
     if not fstate_files:
-        return {}
+        return None
 
-    merged_paths = _reconstruct_paths_from_fstate(
+    return _reconstruct_paths_from_fstate(
         fstate_files, from_id, to_id, leo_num_sats, total_sats
     )
+
+
+def extract_meo_usage_ratio_snapshots(
+    run_dir, multilayer_dir=None, metrics_duration_s=None, metrics_time_step_ms=None
+):
+    """
+    Return one binary sample per valid fstate snapshot: ``1.0`` if the reconstructed path
+    includes >= 1 MEO node, else ``0.0`` (same reconstruction as ``_extract_path_based_metrics``).
+    Empty list if forwarding snapshots are missing.
+    """
+    resolved = _resolve_run_dir(run_dir, multilayer_dir)
+    merged_paths = _fstate_merged_paths(
+        resolved, metrics_duration_s, metrics_time_step_ms
+    )
+    if not merged_paths:
+        return []
+    out = []
+    for p in merged_paths:
+        if not p.get("valid"):
+            continue
+        r = p.get("meo_usage_ratio")
+        if r is not None:
+            out.append(float(r))
+    return out
+
+
+def extract_hop_meo_snapshots(
+    run_dir, multilayer_dir=None, metrics_duration_s=None, metrics_time_step_ms=None
+):
+    """
+    One record per valid fstate snapshot: ``{"hop_count": int, "meo_used": bool}``.
+    """
+    resolved = (
+        run_dir
+        if os.path.isabs(run_dir) and os.path.isdir(run_dir)
+        else _resolve_first_existing_run_dir(run_dir, multilayer_dir)
+    )
+    merged_paths = _fstate_merged_paths(
+        resolved, metrics_duration_s, metrics_time_step_ms
+    )
+    if not merged_paths:
+        return []
+    out = []
+    for p in merged_paths:
+        if not p.get("valid"):
+            continue
+        hc = p.get("hop_count")
+        if not isinstance(hc, (int, float)):
+            continue
+        meo_n = p.get("meo_sat_count")
+        if not isinstance(meo_n, (int, float)):
+            meo_n = 0
+        out.append({"hop_count": int(hc), "meo_used": meo_n >= 1})
+    return out
+
+
+def aggregate_meo_usage_by_hop(snapshots, hop_bins=None):
+    """
+    Bucket pooled snapshots by satellite hop count; each bin has
+    ``{"n": int, "meo_usage_ratio": float}`` (``N_MEO / N``).
+    """
+    buckets = {}
+    for s in snapshots:
+        h = int(s["hop_count"])
+        if hop_bins is not None and h not in hop_bins:
+            continue
+        buckets.setdefault(h, []).append(1.0 if s.get("meo_used") else 0.0)
+
+    keys = list(hop_bins) if hop_bins is not None else sorted(buckets.keys())
+    agg = {}
+    for hop in keys:
+        vals = buckets.get(hop, [])
+        agg[hop] = {
+            "n": len(vals),
+            "meo_usage_ratio": (sum(vals) / float(len(vals))) if vals else float("nan"),
+        }
+    return agg
+
+
+def collect_meo_usage_by_hop_count(
+    run_dirs_or_names,
+    multilayer_dir=None,
+    metrics_duration_s=None,
+    metrics_time_step_ms=None,
+    hop_values=None,
+):
+    """
+    Pool valid fstate snapshots across runs; for each hop count *h*, return
+    ``meo_usage_ratio = N_MEO / N`` (same definition as run-level metric).
+
+    Returns ``(ratio_by_hop, n_snapshots_by_hop)`` dicts keyed by integer hop count.
+    """
+    if hop_values is None:
+        hop_values = [2, 3, 4, 5]
+    snapshots = []
+    for item in run_dirs_or_names:
+        snapshots.extend(
+            extract_hop_meo_snapshots(
+                item, multilayer_dir, metrics_duration_s, metrics_time_step_ms
+            )
+        )
+    agg = aggregate_meo_usage_by_hop(snapshots, hop_bins=tuple(int(h) for h in hop_values))
+    ratio_by_hop = {h: agg[h]["meo_usage_ratio"] for h in hop_values if h in agg}
+    n_by_hop = {h: agg[h]["n"] for h in hop_values if h in agg}
+    return ratio_by_hop, n_by_hop
+
+
+def extract_path_stability_binary_samples(run_dir, multilayer_dir=None):
+    """
+    Per consecutive *valid* snapshot transition: ``1.0`` if path signature unchanged, else ``0.0``.
+    Same construction as ``path_stability_ratio`` in ``_extract_path_based_metrics`` (ratio of
+    ones over this sequence). Empty if forwarding snapshots are unavailable.
+    """
+    resolved = _resolve_run_dir(run_dir, multilayer_dir)
+    merged_paths = _fstate_merged_paths(resolved)
+    if not merged_paths:
+        return []
+    samples = []
+    prev_sig = None
+    for p in merged_paths:
+        if not p.get("valid"):
+            prev_sig = None
+            continue
+        sig = p.get("signature")
+        if sig is None:
+            prev_sig = None
+            continue
+        if prev_sig is None:
+            prev_sig = sig
+            continue
+        samples.append(1.0 if sig == prev_sig else 0.0)
+        prev_sig = sig
+    return samples
+
+
+def _extract_path_based_metrics(
+    run_dir, resolved_run_dir, metrics_duration_s=None, metrics_time_step_ms=None
+):
+    """
+    Compute path-based metrics (hop count, MEO usage ratio, stability, stretch, bottleneck util)
+    by reconstructing forwarding paths from fstate_*.txt.
+
+    These metrics are approximations for end-to-end behavior:
+      - forwarding paths are reconstructed at each dynamic snapshot (simulation update interval)
+      - stability uses whether the satellite-only path signature changes between consecutive snapshots
+      - stretch is computed as hop_count / min_hop_count_over_snapshots for that (from,to)
+      - meo_usage_ratio = N_MEO / N, where N is valid snapshots and N_MEO counts snapshots
+        whose reconstructed path includes ≥1 MEO satellite
+      - bottleneck utilization is computed from isl_utilization.csv aggregated over the run
+    """
+    merged_paths = _fstate_merged_paths(
+        resolved_run_dir, metrics_duration_s, metrics_time_step_ms
+    )
+    if merged_paths is None:
+        return {}
 
     valid_paths = [p for p in merged_paths if p.get("valid")]
     if not valid_paths:
@@ -770,7 +986,10 @@ def _extract_path_based_metrics(run_dir, resolved_run_dir):
         }
 
     hop_counts = [p["hop_count"] for p in valid_paths if isinstance(p.get("hop_count"), (int, float))]
-    meo_ratios = [p["meo_usage_ratio"] for p in valid_paths if p.get("meo_usage_ratio") is not None]
+    n_snapshots = len(valid_paths)
+    n_meo_snapshots = sum(
+        1 for p in valid_paths if isinstance(p.get("meo_sat_count"), (int, float)) and p["meo_sat_count"] >= 1
+    )
     min_hops = min(hop_counts) if hop_counts else None
 
     # Path change count: how often the forwarding path signature changes between
@@ -819,7 +1038,7 @@ def _extract_path_based_metrics(run_dir, resolved_run_dir):
     avg_stretch = (sum(stretches) / len(stretches)) if stretches else float("nan")
 
     avg_hops = sum(hop_counts) / len(hop_counts) if hop_counts else float("nan")
-    avg_meo_ratio = sum(meo_ratios) / len(meo_ratios) if meo_ratios else float("nan")
+    meo_usage_ratio = (float(n_meo_snapshots) / float(n_snapshots)) if n_snapshots > 0 else float("nan")
 
     # Bottleneck utilization: min util across edges on the reconstructed path.
     isl_util_path = os.path.join(resolved_run_dir, "logs_ns3", "isl_utilization.csv")
@@ -844,14 +1063,20 @@ def _extract_path_based_metrics(run_dir, resolved_run_dir):
         "avg_path_stretch": avg_stretch,
         "path_stability_ratio": stability_ratio,
         "bottleneck_utilization": bottleneck,
-        "meo_usage_ratio": avg_meo_ratio,
+        "meo_usage_ratio": meo_usage_ratio,
         "path_change_count": path_change_count,
         "hop_count_variation": hop_count_variation,
         "hop_count_ratio": hop_count_ratio,
     }
 
 
-def extract_metrics(run_dir, tcp_flow_id=0, multilayer_dir=None):
+def extract_metrics(
+    run_dir,
+    tcp_flow_id=0,
+    multilayer_dir=None,
+    metrics_duration_s=None,
+    metrics_time_step_ms=None,
+):
     """
     Read ns-3 TCP logs under run_dir/logs_ns3 and compute aggregated metrics.
 
@@ -859,8 +1084,12 @@ def extract_metrics(run_dir, tcp_flow_id=0, multilayer_dir=None):
       tcp_flow_<id>_rate_in_intervals.csv  (if present; else derived from progress)
       tcp_flow_<id>_rtt.csv
       tcp_flow_<id>_progress.csv
+
+    With ``metrics_duration_s`` / ``metrics_time_step_ms``, clip logs to that window and read
+    ``dynamic_state_<ms>ms_for_<s>s`` for path-based metrics.
     """
     resolved = _resolve_run_dir(run_dir, multilayer_dir)
+    metrics_end_ns = _metrics_end_time_ns(resolved, metrics_duration_s)
     data_dir = os.path.join(resolved, "logs_ns3")
     base = os.path.join(data_dir, "tcp_flow_%d" % tcp_flow_id)
 
@@ -915,7 +1144,10 @@ def extract_metrics(run_dir, tcp_flow_id=0, multilayer_dir=None):
                 if len(row) < 3:
                     continue
                 try:
-                    times_ns.append(int(float(row[1])))
+                    t_ns = int(float(row[1]))
+                    if t_ns > metrics_end_ns:
+                        continue
+                    times_ns.append(t_ns)
                     bytes_prog.append(int(float(row[2])))
                 except ValueError:
                     continue
@@ -929,6 +1161,9 @@ def extract_metrics(run_dir, tcp_flow_id=0, multilayer_dir=None):
                 if len(row) < 3:
                     continue
                 try:
+                    t_ns = int(float(row[1]))
+                    if t_ns > metrics_end_ns:
+                        continue
                     rates.append(float(row[2]))
                 except ValueError:
                     continue
@@ -949,6 +1184,9 @@ def extract_metrics(run_dir, tcp_flow_id=0, multilayer_dir=None):
                 if len(row) < 3:
                     continue
                 try:
+                    t_ns = int(float(row[1]))
+                    if t_ns > metrics_end_ns:
+                        continue
                     rtts_ns.append(float(row[2]))
                 except ValueError:
                     continue
@@ -991,7 +1229,14 @@ def extract_metrics(run_dir, tcp_flow_id=0, multilayer_dir=None):
     # Path-based metrics (hop/stability/stretch/bottleneck/meo usage)
     # These are best-effort: if dynamic_state or fstate snapshots are missing, they remain NaN.
     try:
-        out.update(_extract_path_based_metrics(run_dir, resolved))
+        out.update(
+            _extract_path_based_metrics(
+                run_dir,
+                resolved,
+                metrics_duration_s=metrics_duration_s,
+                metrics_time_step_ms=metrics_time_step_ms,
+            )
+        )
     except Exception:
         # Keep extraction robust; path metrics are supplementary.
         pass

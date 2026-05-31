@@ -1,48 +1,52 @@
-# SatViz: Satellite Visualization
+# Satellite network visualization with Cesium
 
-SatViz is a Cesium-based visualization pipeline to generate interactive
-satellite network visualizations. It makes use of the online Cesium API
-by generating CesiumJS code. The API calls require its user to obtain 
-a Cesium access token (via [https://cesium.com/]()).
+Interactive 3D visualizations of constellations, paths, and link utilization.
+Scripts emit CesiumJS HTML under `viz_output/`.
+
+It makes use of:
+
+* `Cesium Ion` : Online globe API (access token required)
+
+  https://cesium.com/
 
 ## Getting started
 
-1. Obtain a Cesium access token at [https://cesium.com/]()
+1. Obtain a Cesium access token at https://cesium.com/
 
-2. Edit `static_html/top.html`, and insert your Cesium access 
-   token at line 10:
-
+2. Insert the token in `static_html/top.html` (line 10):
    ```javascript
    Cesium.Ion.defaultAccessToken = '<CESIUM_ACCESS_TOKEN>';
    ```
 
-3. Now you are able to make use of the scripts in `scripts/`
+3. Run a script from `scripts/` (example: constellation view):
+   ```
+   cd satviz/scripts
+   python visualize_constellation.py
+   ```
 
+4. Open the generated HTML under `satviz/viz_output/`.
 
-## Script description
+## Scripts
 
-1. `visualize_constellation.py`: Generates visualizations for entire constellation (multiple shells).
+* `visualize_constellation.py` : Full constellation (Starlink / Kuiper / Telesat blocks in file)
 
-2. `visualize_horizon_over_time.py`: Finds satellite positions (azimuth, altitude) over time for a static observer and plots them relative to the observer.
+* `visualize_horizon_over_time.py` : Satellite sky plot for a fixed observer
 
-3. `visualize_path.py`: Visualizes paths between pairs of endpoints at specific time instances.
+* `visualize_path.py` : Shortest path at a time instant
 
-4. `visualize_path_no_isl.py`: Visualizes paths between pairs of endpoints when no inter-satellite connectivity exists.
+* `visualize_path_no_isl.py` : Paths without ISLs (ground relays)
 
-5. `visualize_path_wise_utilization.py`: Visualizes link utilization for specific end-end paths at a specific time instance.
+* `visualize_path_wise_utilization.py` : Per-path link utilization
 
-6. `visualize_utilization.py`: Visualizes link utilization for all end-end paths at a specific time instance.
+* `visualize_utilization.py` : Constellation-wide utilization
 
-## Visualizations in the paper
+## Paper figures (satviz)
 
-1. `Fig. 11: Constellation trajectories`: Use script `visualize_constellation.py` to generate constellations. To generate Starlink, Kuiper, or Telesat, one should uncomment the corresponding parameter block in the script, and comment out the other parameter blocks. The default is Starlink 5-shell.
-
-2. `Fig. 12: Ground observer's view`: Use script `visualize_horizon_over_time.py`. To change observer location, change the `LOCATION` coordinates. In order to visualize for X seconds at a granularity of Y seconds, set `VIZ_TIME = X` and `VIZ_GRAN = Y`. The default values are: `LOCATION = (59.9311, 30.3609)` corresponding to St. Petersburg, `X = 170`, and `Y = 5`.
-
-3. `Fig. 13: Shortest path changes over time`: Use script `visualize_path.py`. Change the values of `GEN_TIME` and `path_file` for various visualization generation times and city pairs respectively. The default values generate `Fig. 13 (left)`. The same script can be used to generate `Fig. 16(a) and 17(a)`.
-
-4. `Fig. 14: Congestion shifts over time`: Use script `visualize_path_wise_utilization.py`. Change the values of `GEN_TIME`, `path_file`, and `IN_UTIL_FILE` for specifying visualization time, end-to-end path, and utilization. The default values generate `Fig. 14 (top)`.
-
-5. `Fig. 15: Constellation-wide utilization`: Use script `visualize_utilization.py`. Change the values of `GEN_TIME` and `IN_UTIL_FILE` for specifying visualization generation time and utilization. The default values generate `Fig. 15`.
-
-6. `Fig. 16(b) and 17(b)`: Use script `visualize_path_no_isl.py` to visualize paths when constellation does not have inter-satellite connectivity. Change the values of `GEN_TIME` and `path_file` for various visualization generation times and city pairs respectively. The default values generate `Fig 17(b)`.
+| Paper fig. | Script | Notes |
+|------------|--------|--------|
+| Fig. 11 | `visualize_constellation.py` | Uncomment one constellation block |
+| Fig. 12 | `visualize_horizon_over_time.py` | Default observer: St. Petersburg |
+| Fig. 13, 16(a), 17(a) | `visualize_path.py` | Set `GEN_TIME`, `path_file` |
+| Fig. 14 | `visualize_path_wise_utilization.py` | Set `GEN_TIME`, `path_file`, `IN_UTIL_FILE` |
+| Fig. 15 | `visualize_utilization.py` | Set `GEN_TIME`, `IN_UTIL_FILE` |
+| Fig. 16(b), 17(b) | `visualize_path_no_isl.py` | No ISL topology |

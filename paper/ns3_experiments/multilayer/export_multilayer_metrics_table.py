@@ -14,9 +14,17 @@ import os
 import re
 import sys
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+
 from evaluation_utils import export_results_csv, extract_metrics
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+try:
+    from run_list import dynamic_state_update_interval_ms, simulation_end_time_s
+except Exception:
+    simulation_end_time_s = 25
+    dynamic_state_update_interval_ms = 1000
+
 RUNS_DIR = os.path.join(SCRIPT_DIR, "runs")
 
 
@@ -109,6 +117,18 @@ def main():
         default=0,
         help="Limit number of runs (0 = no limit)",
     )
+    parser.add_argument(
+        "--duration-s",
+        type=int,
+        default=simulation_end_time_s,
+        help="Clip TCP logs and use dynamic_state_<ms>ms_for_<s>s (default: run_list).",
+    )
+    parser.add_argument(
+        "--time-step-ms",
+        type=int,
+        default=dynamic_state_update_interval_ms,
+        help="Dynamic state interval for path metrics (default: run_list).",
+    )
     args = parser.parse_args()
 
     if not os.path.isdir(RUNS_DIR):
@@ -141,7 +161,11 @@ def main():
         if not meta:
             continue
 
-        met = extract_metrics(rd)
+        met = extract_metrics(
+            rd,
+            metrics_duration_s=args.duration_s,
+            metrics_time_step_ms=args.time_step_ms,
+        )
         # Skip runs where logs are missing entirely
         if met.get("error"):
             # Keep row anyway if you want later debugging, but by default we skip.

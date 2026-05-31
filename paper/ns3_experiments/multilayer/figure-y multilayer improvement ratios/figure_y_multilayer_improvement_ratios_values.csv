@@ -1,0 +1,4 @@
+pair,run_leo_only,run_multilayer,duration_s,time_step_ms,avg_hop_count_leo_only,avg_hop_count_multilayer,hop_ratio_leo_over_ml,bottleneck_utilization_leo_only,bottleneck_utilization_multilayer,util_ratio_leo_over_ml
+Mumbai to Lima,leo_only_1160_to_1185_tcp,multilayer_1196_to_1221_tcp,25,1000,16.0,5.0,3.2,0.542423,0.157166,3.4512744486721045
+Lima to Karachi,leo_only_1185_to_1167_tcp,multilayer_1221_to_1203_tcp,25,1000,15.0,4.0,3.75,0.572003,0.15729,3.636613897895607
+Tokyo to Buenos-Aires,leo_only_1156_to_1168_tcp,multilayer_1192_to_1204_tcp,25,1000,16.0,5.0,3.2,0.45545416666666666,0.172554,2.639487735240369

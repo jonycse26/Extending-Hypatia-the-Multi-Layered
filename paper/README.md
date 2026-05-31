@@ -1,68 +1,54 @@
-# Paper reproduction
+# Hypatia paper reproduction
 
-This is the code repository introduced and used in "Exploring the “Internet from space” with Hypatia" 
-by Simon Kassing*, Debopam Bhattacherjee*, André Baptista Águas, Jens Eirik Saethre and Ankit Singla
-(*equal contribution), which is published in the Internet Measurement Conference (IMC) 2020.
+Steps and scripts to reproduce the experiments and figures in *Exploring the
+“Internet from space” with Hypatia* (IMC 2020). Use Linux (e.g. Ubuntu 18+).
 
-It is highly recommend you use a Linux operating system (e.g., Ubuntu 18 or higher).
+## Getting the data without running everything
 
-## Getting the data without running anything
+Some steps take hours. Pre-generated artifacts are available:
 
-Some parts of Hypatia take significant time to run. As such, if you want to get started quickly,
-you can download and extract all (temporary) data which Hypatia generates for the paper.
+1. Download `hypatia_paper_temp_data.tar.gz` into this folder (`paper/`):
 
-1. Download `hypatia_paper_temp_data.tar.gz` and put it into `<hypatia>/paper/`.
+   https://github.com/snkas/hypatia/releases
 
-   The data is hosted on GitHub in the releases section: 
-   * (v1: preliminary) https://github.com/snkas/hypatia/releases
-   
-     SHA-256 checksum:
-     18d761a28706723b57772e0636fbc40b7d57161f4c54069eede0c8ae740cbe2d
-     
-   * (Previous versions: v0)
-   
-2. Double-check: the archive `<hypatia>/paper/hypatia_paper_temp_data.tar.gz` now exists.
+   SHA-256 (v1): `18d761a28706723b57772e0636fbc40b7d57161f4c54069eede0c8ae740cbe2d`
 
-3. Make sure you have the `numpy`, `exputil` and `networkload` Python packages installed:
+2. Install Python packages and gnuplot:
    ```
    pip install numpy
    pip install git+https://github.com/snkas/exputilpy.git@v1.6
    pip install git+https://github.com/snkas/networkload.git@v1.3
-   ```
-   
-4. Make sure gnuplot is installed:
-   ```
    sudo apt-get install gnuplot
    ```
 
-5. Extract the temporary data:
+3. Extract:
    ```
    cd paper
    python extract_temp_data.py
    ```
 
-## Steps to run
+## Getting started (full reproduction)
 
-**Step 1: generating LEO satellite network dynamic state over time**
+1. Generate LEO satellite network state over time:
 
-Instructions can be found in `<hypatia>/paper/satellite_networks_state/README.md`
+   `paper/satellite_networks_state/README.md`
 
-**Step 2: build ns-3 simulator**
+2. Build the ns-3 simulator:
 
-Instructions can be found in `<hypatia>/ns3-sat-sim/README.md`
+   `ns3-sat-sim/README.md`
 
-**Step 3: performing analysis using satgenpy**
+3. Run satgenpy analysis:
 
-Instructions can be found in `<hypatia>/paper/satgenpy_analysis/README.md`
+   `paper/satgenpy_analysis/README.md`
 
-**Step 4: running ns-3 experiments**
+4. Run ns-3 experiments:
 
-Instructions can be found in `<hypatia>/paper/ns3_experiments/README.md`
+   `paper/ns3_experiments/README.md`
 
-**Step 5: generating satviz figures**
+5. Generate satviz figures (paper section in that README):
 
-Instructions can be found in `<hypatia>/satviz/README.md` under `Visualizations in the paper`.
+   `satviz/README.md`
 
-**Step 6: plotting figures of the paper**
+6. Plot paper figures:
 
-Instructions can be found in `<hypatia>/paper/figures/README.md`
+   `paper/figures/README.md`

@@ -1,4 +1,0 @@
-description,run_leo_only,run_multilayer,leo_leo_max_util_leo_only,leo_leo_max_util_multilayer,load_reduction_ratio_peak,leo_leo_mean_util_nz_leo_only,leo_leo_mean_util_nz_multilayer,load_reduction_ratio_mean_nz
-leo_only 1156→1168,leo_only_1156_to_1168_tcp,multilayer_1192_to_1204_tcp,0.851939,0.0,1.0,0.2712836526946109,nan,nan
-leo_only 1160→1185,leo_only_1160_to_1185_tcp,multilayer_1196_to_1221_tcp,0.884215,0.0,1.0,0.30191343333333354,nan,nan
-leo_only 1185→1167,leo_only_1185_to_1167_tcp,multilayer_1221_to_1203_tcp,0.886371,0.002981,0.9966368484528487,0.3085391285714287,0.0015040000000000001,0.9951254156742981
