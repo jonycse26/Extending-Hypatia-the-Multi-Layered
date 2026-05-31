@@ -3,12 +3,11 @@
 Figure J — Load-shift (LEO → MEO backbone)
 
 Generates a clear comparison of ISL utilization by link class (LEO-only vs multilayer),
-plus a plain-language summary. See module docstring in previous revisions for metric defs.
+plus a plain-language summary. 
 
 Bars are built from ``multilayer_all_experiments_metrics.csv`` (scalar aggregates per run).
 ``--duration-s`` / ``--time-step-ms`` annotate the figure for the intended simulation setup
-(default: ``run_list``: 25 s, 1000 ms → ``dynamic_state_1000ms_for_25s``). Re-export metrics
-after 25 s experiment-1 TCP runs so the chart matches the caption.
+(default: ``run_list``: 25 s, 1000 ms → ``dynamic_state_1000ms_for_25s``).
 """
 
 import argparse
@@ -134,14 +133,14 @@ def _bar_heights(ys):
 
 
 def _annotate_bars(ax, x, ys, w):
-    """Small labels on top of bars so near-zero values are readable."""
+    """Small labels on top of bars (reference Figure J: ~0 vs 0.00)."""
     for xi, y in zip(x, ys):
         if y <= 1e-6:
-            lbl = "~0"
+            lbl = "0.00" if y == 0.0 else "~0"
             yoff = 0.02
         else:
             lbl = "%.2f" % y
-            yoff = y + 0.02
+            yoff = min(y + 0.02, 0.98)
         ax.text(xi, yoff, lbl, ha="center", va="bottom", fontsize=7, color="#333333")
 
 
@@ -158,7 +157,8 @@ def _panel(ax, y_leo, y_ml, title, ylabel):
     ax.set_ylabel(ylabel, fontsize=10)
     ax.set_title(title, fontsize=12, pad=8)
     ax.grid(True, axis="y", linestyle=":", alpha=0.65)
-    ax.set_ylim(0.0, 1.12)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.margins(x=0.02)
 
 
